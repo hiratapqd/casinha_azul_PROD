@@ -4,67 +4,55 @@ const Assistido = require('../models/Assistido');
 
 exports.criarSolicitacao = async (req, res) => {
     try {
-        const { cpf_assistido, queixa, atendimento_por } = req.body;
+        // 1. Captura EXATAMENTE os nomes definidos no name="" do seu EJS [cite: 63, 64, 65, 68, 70, 71]
+        const { 
+            cpf_assistido, sexo, idade, religiao, 
+            cidade, uf, email, atendimento_por, queixa, subir_escada 
+        } = req.body;
 
+        // 2. Criar ID Único para evitar duplicidade no mesmo dia (Fuso Brasília)
+        const dataHoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); 
+        const idUnico = `${cpf_assistido}_${dataHoje}`;
+
+        // 3. Buscar nome do assistido no cadastro base
         const assistido = await Assistido.findById(cpf_assistido);
-        if (!assistido) {
-            return res.json({ status: 'nao_encontrado' });
-        }
+        if (!assistido) return res.json({ status: 'nao_encontrado' });
 
-        // --- AJUSTE DEFINITIVO DE TIMEZONE (BRASÍLIA UTC-3) ---
-        const agora = new Date();
-        
-        // Criamos o início do dia (00:00:00) no fuso de Brasília, convertido para UTC
-        const hojeInicio = new Date(agora);
-        hojeInicio.setUTCHours(agora.getUTCHours() - 3); // Ajusta para Brasília
-        hojeInicio.setUTCHours(3, 0, 0, 0); // Define meia-noite em Brasília (que é 03:00 UTC)
-
-        const hojeFim = new Date(hojeInicio);
-        hojeFim.setUTCHours(26, 59, 59, 999); // Define o fim do dia (23:59 Brasília / 02:59 UTC do dia seguinte)
-        // -----------------------------------------------------
-
-        // 1. Validar Duplicidade no intervalo real de Brasília
-        const jaSolicitouHoje = await Solicitacao.findOne({
-            cpf_assistido: cpf_assistido,
-            data: { $gte: hojeInicio, $lte: hojeFim }
+        // 4. Lógica de Fila (Início do dia em Brasília)
+        const hojeInicio = new Date(dataHoje + "T00:00:00-03:00");
+        const contagem = await Solicitacao.countDocuments({
+            data_pedido: { $gte: hojeInicio }
         });
+        const posicaoFila = contagem + 1;
 
-        if (jaSolicitouHoje) {
-            return res.json({ 
-                status: 'duplicado', 
-                mensagem: `O assistido ${assistido.nome} já possui uma solicitação hoje na posição ${jaSolicitouHoje.posicao}.` 
-            });
-        }
-
-        // 2. Contar a Fila corretamente
-        const contagemHoje = await Solicitacao.countDocuments({
-            data: { $gte: hojeInicio, $lte: hojeFim }
-        });
-
-        const limiteMax = 30;
-        const posicaoFila = contagemHoje + 1;
-
+        // 5. Mapear e Salvar
         const novaSolicitacao = new Solicitacao({
-            cpf_assistido: cpf_assistido,
-            nome_assistido: assistido.nome,
-            queixa: queixa,
-            atendimento_por: atendimento_por,
+            _id: idUnico,
+            cpf_assistido,
+            nome_assistido: assistido.nome, // Pega o nome oficial do cadastro
+            sexo,
+            idade,
+            religiao,
+            cidade,
+            uf,
+            email,
+            atendimento_por,
+            queixa,
+            subir_escada,
             posicao: posicaoFila,
-            status: posicaoFila <= limiteMax ? 'Confirmado' : 'Espera',
-            data: agora 
+            status: posicaoFila <= 30 ? 'Confirmado' : 'Espera'
         });
 
         await novaSolicitacao.save();
-
-        res.json({
-            status: 'sucesso',
-            posicao: posicaoFila,
-            limite: limiteMax,
-            nome: assistido.nome
-        });
+        res.json({ status: 'sucesso', posicao: posicaoFila, limite: 30 });
 
     } catch (err) {
-        console.error("❌ Erro:", err.message);
+        if (err.code === 11000) { // Erro de ID duplicado no MongoDB
+            return res.json({ 
+                status: 'duplicado', 
+                mensagem: 'Este CPF já realizou uma solicitação para a data de hoje.' 
+            });
+        }
         res.status(500).json({ status: 'erro', mensagem: err.message });
     }
 };
