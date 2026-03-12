@@ -1,0 +1,153 @@
+<%- include('partials/header') %>
+    <link rel="stylesheet" href="/styles/styles.css">
+<main class="hero">
+    <h1>Cadastro dos mediuns</h1>
+    <form action="/mediun/novo" method="POST" class="form-container">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
+        </div><br>
+
+        <div class="form-group">
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" required>
+        </div><br>
+    </div><br>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="telefone">Telefone/WhatsApp:</label>
+            <input type="tel" id="telefone" name="telefone">
+        </div><br>
+
+        <div class="form-group">
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" name="email">
+        </div><br>
+    </div><br>
+        <div class="form-group">
+            <label for="mediunidade">Mediunidade:</label>
+            <input type="text" id="mediunidade" name="mediunidade">
+            <label for="mediunidade">separe por vigula no caso de mais de uma</label>
+        </div><br>
+
+<div class="disponibilidade-secao">
+    <h2>Disponibilidade por Modalidade</h2>
+    <p>Selecione os dias da semana para cada atividade que deseja realizar:</p>
+
+    <% 
+        const modalidades = [
+            { id: 'apometria', label: 'Apometria' },
+            { id: 'reiki', label: 'Reiki' },
+            { id: 'auriculo', label: 'Aurículo' },
+            { id: 'maos', label: 'Mãos Sem Fronteiras' },
+            { id: 'homeopatia', label: 'Homeopatia' },
+            { id: 'cantina', label: 'Cantina' },
+            { id: 'passe', label: 'Passe' },
+            { id: 'mesa', label: 'Mesa' }
+        ];
+        const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    %>
+
+    <div class="grade-container">
+        <% modalidades.forEach(mod => { %>
+            <div class="linha-modalidade">
+                <span class="label-modalidade"><%= mod.label %></span>
+                <div class="checkbox-group">
+                    <% dias.forEach(dia => { %>
+                        <label class="check-item">
+                            <input type="checkbox" name="voluntario_<%= mod.id %>_dias" value="<%= dia.toLowerCase() %>">
+                            <span><%= dia %></span>
+                        </label>
+                    <% }) %>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div>
+
+
+    </div><br>
+        <input type="hidden" id="forceUpdate" name="forceUpdate" value="false">
+        <button type="submit" class="btn-enviar">Finalizar Cadastro do medium</button>
+    </form>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const form = document.querySelector('.form-container');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Impede o envio padrão
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Como o FormData não pega múltiplos checkboxes do mesmo nome automaticamente como array:
+        // Precisamos ajustar para enviar os arrays de disponibilidade corretamente se usar JSON,
+        // mas para facilitar, vamos usar o envio tradicional via fetch:
+        
+        enviarFormulario();
+    });
+
+    async function enviarFormulario() {
+    const formElement = document.querySelector('.form-container');
+    const formData = new FormData(formElement);
+    
+    // Convertendo FormData para um objeto simples para enviar como JSON
+    const dados = {};
+    formData.forEach((value, key) => {
+        // Se o campo já existe (como nos checkboxes de dias), transforma em array
+        if (dados[key]) {
+            if (!Array.isArray(dados[key])) {
+                dados[key] = [dados[key]];
+            }
+            dados[key].push(value);
+        } else {
+            dados[key] = value;
+        }
+    });
+
+    try {
+        const resposta = await fetch('/mediun/novo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' // Informamos que estamos enviando JSON
+            },
+            body: JSON.stringify(dados) // Transformamos o objeto em texto JSON
+        });
+
+        const resultado = await resposta.json(); [cite: 24]
+
+        if (resultado.status === 'conflito') { [cite: 24]
+            Swal.fire({
+                title: 'CPF já cadastrado!',
+                text: "Deseja atualizar os dados deste voluntário?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sim, atualizar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('forceUpdate').value = 'true';
+                    enviarFormulario(); // Reenvia com forceUpdate=true
+                }
+            });
+        } else if (resultado.status === 'sucesso') { [cite: 27]
+            Swal.fire(
+                'Concluído!',
+                resultado.acao === 'atualizado' ? 'Dados atualizados.' : 'Cadastrado com sucesso.',
+                'success'
+            ).then(() => {
+                window.location.href = '/'; // Só redireciona DEPOIS que o usuário clica no OK do alerta
+            });
+        }
+    } catch (err) {
+        console.error("Erro na requisição:", err);
+        Swal.fire('Erro!', 'Não foi possível se comunicar com o servidor.', 'error');
+    }
+    }
+
+</script>
+</main>
+<%- include('partials/footer') %>

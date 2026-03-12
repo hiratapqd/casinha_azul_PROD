@@ -1,0 +1,69 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+<main class="hero">
+    <h1>Escala de Voluntários</h1>
+
+    <form action="/voluntarios/escala" method="GET" class="form-container" style="display: flex; gap: 15px; align-items: flex-end;">
+        <div class="form-group">
+            <label>Dia da Semana:</label>
+            <select name="dia" required>
+                <option value="">Selecione...</option>
+                <option value="seg" <%= filtros.dia === 'seg' ? 'selected' : '' %>>Segunda-feira</option>
+                <option value="ter" <%= filtros.dia === 'ter' ? 'selected' : '' %>>Terça-feira</option>
+                <option value="qua" <%= filtros.dia === 'qua' ? 'selected' : '' %>>Quarta-feira</option>
+                <option value="qui" <%= filtros.dia === 'qui' ? 'selected' : '' %>>Quinta-feira</option>
+                <option value="sex" <%= filtros.dia === 'sex' ? 'selected' : '' %>>Sexta-feira</option>
+                <option value="sáb" <%= filtros.dia === 'sáb' ? 'selected' : '' %>>Sábado</option>
+                <option value="dom" <%= filtros.dia === 'dom' ? 'selected' : '' %>>Domingo</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Terapia/Tipo:</label>
+            <select name="terapia" required>
+                <option value="">Selecione...</option>
+                <option value="apometria" <%= filtros.terapia === 'apometria' ? 'selected' : '' %>>Apometria</option>
+                <option value="reiki" <%= filtros.terapia === 'reiki' ? 'selected' : '' %>>Reiki</option>
+                <option value="auriculo" <%= filtros.terapia === 'auriculo' ? 'selected' : '' %>>Auriculoterapia</option>
+                <option value="maos" <%= filtros.terapia === 'maos' ? 'selected' : '' %>>Mãos Sem Fronteiras</option>
+                <option value="homeopatia" <%= filtros.terapia === 'homeopatia' ? 'selected' : '' %>>Homeopatia</option>
+                <option value="passe" <%= filtros.terapia === 'passe' ? 'selected' : '' %>>Passe</option>
+                <option value="cantina" <%= filtros.terapia === 'cantina' ? 'selected' : '' %>>Cantina</option>
+                <option value="mesa" <%= filtros.terapia === 'mesa' ? 'selected' : '' %>>Mesa</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-enviar" style="margin-bottom: 5px;">Filtrar</button>
+    </form>
+
+    <hr>
+
+    <% if (filtros.dia && filtros.terapia) { %>
+        <h3>Resultados para <%= filtros.terapia.toUpperCase() %> na <%= filtros.dia.toUpperCase() %></h3>
+        <table border="1" style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Mediunidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (voluntarios.length > 0) { %>
+                    <% voluntarios.forEach(v => { %>
+                        <tr>
+                            <td><%= v.nome %></td>
+                            <td><%= v.telefone || 'N/A' %></td>
+                            <td><%= v.mediunidade || '-' %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 10px;">Nenhum voluntário disponível para este dia/terapia.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    <% } %>
+</main>
+<%- include('partials/footer') %>

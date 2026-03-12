@@ -1,0 +1,48 @@
+<footer class="main-footer">
+    <div class="footer-container">
+        <p>&copy; <%= new Date().getFullYear() %> Casinha Azul - Todos os direitos reservados.</p>
+        <div class="footer-credits">
+            Powered by <a href="mailto:hiratabruno@yahoo.com" class="credit-link">Creative Gondola</a>
+        </div>
+    </div>
+</footer>
+
+<style>
+    .main-footer {
+        background-color: #f8f9fa;
+        padding: 20px 0;
+        margin-top: 40px;
+        border-top: 1px solid #dee2e6;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .footer-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between; 
+        align-items: center;
+    }
+
+    .credit-link {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .credit-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Ajuste para dispositivos móveis */
+    @media (max-width: 600px) {
+        .footer-container {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+        }
+    }
+    
+</style>

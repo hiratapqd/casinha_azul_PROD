@@ -1,0 +1,56 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+<main class="hero">
+    <h1>Painel de Gestão</h1>
+    
+    <div class="dashboard">
+        <div class="card card-detalhado">
+            <h3>Equipe Ativa</h3>
+            <div class="stats-grid">
+                <% for (let tipo in resumo.voluntariosPorTipo) { %>
+                    <div class="stat-item">
+                        <span class="label"><%= tipo %>:</span>
+                        <span class="value"><%= resumo.voluntariosPorTipo[tipo] %></span>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Atendimentos Hoje</h3>
+            <p class="big-number"><%= resumo.hoje %></p>
+        </div>
+
+        <div class="card alerta">
+            <h3>Taxa de Abandono</h3>
+            <p class="big-number"><%= resumo.taxaAbandono %>%</p>
+            <small><%= resumo.apometriaUnica %> assistidos (Só Apometria)</small>
+        </div>
+    </div>
+
+<section class="voluntarios-dia">
+    <h2>Escala do Dia - <%= new Date().toLocaleDateString('pt-BR') %></h2>
+    <div class="escala-container">
+        <% 
+           const gruposDia = {};
+           if (typeof escala_hoje !== 'undefined') {
+               escala_hoje.forEach(v => {
+                   if (!gruposDia[v.tipo]) gruposDia[v.tipo] = [];
+                   gruposDia[v.tipo].push(v.nome);
+               });
+           }
+        %>
+        <% for (let tipo in gruposDia) { %>
+            <div class="grupo-box">
+                <h4><%= tipo %></h4>
+                <ul>
+                    <% gruposDia[tipo].forEach(nome => { %>
+                        <li><%= nome %></li>
+                    <% }) %>
+                </ul>
+            </div>
+        <% } %>
+    </div>
+</section>
+</main>
+<%- include('partials/footer') %>

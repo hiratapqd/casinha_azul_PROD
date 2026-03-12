@@ -1,0 +1,161 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+
+<style>
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    .form-row .form-group {
+        flex: 1; /* Faz os campos dividirem o espaço igualmente */
+        margin-bottom: 0; 
+    }
+</style>
+
+<main class="hero">
+    <h1>Solicitação de Atendimento Apométrico</h1>
+    <form action="/atendimento/solicitacao" method="POST" class="form-container">
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="data">Data do Atendimento:</label>
+                <input type="date" id="data" name="data" 
+                       value="<%= new Date().toLocaleDateString('en-CA') %>" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex: 2;"> <label for="nome">Nome de quem será atendido:</label>
+                <input type="text" id="nome" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="cpf_assistido">CPF do Assistido:</label>
+                <input type="text" id="cpf_assistido" name="cpf_assistido" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="sexo">Sexo:</label>
+                <input type="text" id="sexo" name="sexo">
+            </div>
+            <div class="form-group">
+                <label for="idade">Idade:</label>
+                <input type="number" id="idade" name="idade">
+            </div>
+            <div class="form-group">
+                <label for="religiao">Religião:</label>
+                <input type="text" id="religiao" name="religiao">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex: 3;">
+                <label for="cidade">Cidade:</label>
+                <input type="text" id="cidade" name="cidade">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label for="uf">UF:</label>
+                <input type="text" id="uf" name="uf" maxlength="2">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+                <label for="email">email:</label>
+                <input type="email" id="email" name="email">
+            </div>
+            <div class="form-group">
+                <label for="atendimento_por">Sendo atendido pela:</label>
+                <select id="atendimento_por" name="atendimento_por">
+                    <option value="Primeira vez" selected>Primeira vez</option>
+                    <option value="Segunda vez" >Segunda vez</option>
+                    <option value="Terceira vez" >Terceira vez</option>
+                    <option value="Quarta vez" >Quarta vez</option>
+                    <option value="Quinta vez" >Quinta vez</option>
+                    <option value="Já passei mais vezes" >Já passei mais vezes</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="queixa">Breve descrição da queixa/motivo:</label>
+            <textarea id="queixa" name="queixa" rows="3"></textarea>
+        </div><br>
+
+        <div class="form-group">
+            <label for="subir_escada">Pode subir escada:</label>
+            <select id="subir_escada" name="subir_escada">
+                <option value="Sim" selected>Sim</option>
+                <option value="Não">Não</option>
+            </select>
+        </div><br><br>
+
+        <button type="submit" class="btn-enviar" <%= typeof bloqueado !== 'undefined' && bloqueado ? 'disabled' : '' %>>
+            <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitação' %>
+        </button>
+    </form>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Bloqueia o recarregamento da página 
+
+        const formData = new FormData(form);
+        const dados = Object.fromEntries(formData.entries());
+
+        try {
+            const resposta = await fetch('/atendimento/solicitacao', { // Rota sincronizada [cite: 39]
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            const resultado = await resposta.json();
+
+            if (resultado.status === 'sucesso') {
+                Swal.fire({
+                    title: resultado.posicao <= resultado.limite ? '✅ Confirmado!' : '⏳ Lista de Espera',
+                    text: `Sua posição é ${resultado.posicao}/${resultado.limite}.`,
+                    icon: resultado.posicao <= resultado.limite ? 'success' : 'warning',
+                    confirmButtonText: 'Entendido',
+                    showCancelButton: true,
+                    cancelButtonText: 'Início'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.reload(); // [cite: 42]
+                    } else {
+                        window.location.href = '/'; // [cite: 43]
+                    }
+                });
+            } else if (resultado.status === 'duplicado') {
+                // ALERTA PARA SOLICITAÇÃO REPETIDA
+                Swal.fire({
+                    title: 'Solicitação já realizada!',
+                    text: resultado.mensagem,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+            } else if (resultado.status === 'nao_encontrado') {
+                Swal.fire({
+                    title: 'Assistido não encontrado',
+                    text: 'O CPF informado não possui cadastro. Deseja cadastrar agora?',
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ir para Cadastro'
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = '/cadastro'; // [cite: 46]
+                });
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            Swal.fire('Erro!', 'Falha ao conectar com o servidor.', 'error'); // [cite: 48]
+        }
+    });
+</script>
+</main>
+<%- include('partials/footer') %>

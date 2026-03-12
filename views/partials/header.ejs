@@ -1,0 +1,50 @@
+<header>
+
+    <nav>
+        <img src="../images/logotipo-casinhazul.png" alt="Logotipo da Casinha Azul" class="logo">
+        <ul class="menu">
+            <li><a href="/">Início</a></li>
+            <li><a href="/cadastro">Cadastro</a></li>
+            <li><a href="/solicitacao_atendimento">Solicitação de Atendimento</a></li>
+            <li class="dropdown">
+                <a>Atendimento</a>
+                <ul class="dropdown-content">
+<!--                     <li><a href="/atendimento/apometrico">Apométrico</a></li>
+                    <li><a href="/atendimento/reiki">Reiki</a></li>
+                    <li><a href="/atendimento/auriculo">Aurículo</a></li>
+                    <li><a href="/atendimento/maos_sem_fronteiras">Mãos Sem Fronteira</a></li>
+                    <li><a href="/atendimento/homeopatico">Homeopático</a></li> -->
+                    <% ((typeof terapias !== 'undefined' ? terapias : [])).forEach(t => { %>
+                        <li><a href="/atendimento/<%= t.slug %>"><%= t.nome %></a></li>
+                    <% }) %>
+            </ul>
+            
+            </li>
+            <li class="dropdown">
+                <a>Voluntários</a>
+                <ul class="dropdown-content">
+                    <li><a href="/cadastro_mediuns">Cadastro de Voluntários</a></li>
+                    <li><a href="/voluntarios/escala">Escala de Voluntários</a></li>
+                    
+                </ul>
+           </li>
+           <li class="dropdown">
+                <a>Relatórios</a>
+                <ul class="dropdown-content">
+                    <li><a href="/relatorios/atendimentos-hoje">Atendimentos de Hoje</a></li>
+                    <li><a href="/relatorios/apometria-inativos">Apometria Inativos</a></li> 
+                    <li><a href="/relatorios/todos-assistidos">Lista de todos os Assistidos</a></li>
+                </ul>
+        </ul>
+    </nav>
+</header>
+<script>
+    // Script para abrir/fechar o menu no celular
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuList = document.getElementById('menu-list');
+
+    mobileMenu.addEventListener('click', () => {
+        menuList.classList.toggle('active');
+        mobileMenu.classList.toggle('is-active');
+    });
+</script>
