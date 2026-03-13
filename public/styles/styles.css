@@ -316,3 +316,48 @@ nav {
         .dashboard { grid-template-columns: 1fr; }
         .stats-grid { grid-template-columns: 1fr; }
     }
+
+    /* Estilos para a Tabela de Fila */
+table {
+    width: 90%;
+    margin: 30px auto;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #1277bb;
+    color: white;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    background: #e0e0e0;
+}
+
+.status-badge.atendimento {
+    background: #28a745;
+    color: white;
+}
+
+.btn-atender {
+    text-decoration: none;
+    background: #1277bb;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.btn-atender:hover {
+    background: #0d5a8f;
+}

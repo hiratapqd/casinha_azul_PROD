@@ -10,10 +10,13 @@ const solicitacaoController = require('../controllers/SolicitacaoController');
 router.get('/', dashboardController.getDashboard);
 
 // --- ROTAS DE CADASTRO (VIEW) ---
-router.get('/cadastro', assistidoController.renderFormCadastro); // GET para ver o form
-router.post('/assistido/novo', assistidoController.criarAssistido); // POST para salvar
+// router.get('/cadastro', assistidoController.renderFormCadastro); // GET para ver o form
+router.get('/fila-atendimento', solicitacaoController.getFilaHoje);
+router.post('/assistido/novo', assistidoController.criarAssistido); 
+router.get('/atendimento/iniciar/:id', solicitacaoController.iniciarAtendimento);
 
-// --- ROTAS DE VOLUNTÁRIOS (Médiuns) ---
+
+// --- ROTAS DE VOLUNTÁRIOS (Médiuns) --- // POST para salvar
 router.get('/cadastro_mediuns', (req, res) => res.render('cadastro_mediuns'));
 router.post('/voluntario/novo', voluntarioController.criarVoluntario);
 router.get('/visualizar_voluntarios', voluntarioController.getVisualizarVoluntarios);

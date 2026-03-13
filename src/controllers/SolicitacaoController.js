@@ -2,6 +2,7 @@
 const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
 
+
 exports.criarSolicitacaoComCadastro = async (req, res) => {
     try {
         const dados = req.body;
@@ -72,5 +73,42 @@ exports.buscarHistorico = async (req, res) => {
         res.json(historico);
     } catch (err) {
         res.status(500).json([]);
+    }
+};
+
+exports.getFilaHoje = async (req, res) => {
+    try {
+        const inicioDia = new Date();
+        inicioDia.setHours(0, 0, 0, 0);
+
+        const fimDia = new Date();
+        fimDia.setHours(23, 59, 59, 999);
+
+        // Alterado de 'data' para 'data_pedido' para coincidir com o que é salvo
+        const solicitacoes = await Solicitacao.find({
+            data_pedido: { $gte: inicioDia, $lte: fimDia }
+        }).sort({ data_pedido: 1 }); 
+
+        res.render('fila_atendimento', { solicitacoes });
+    } catch (error) {
+        console.error("Erro ao buscar fila:", error);
+        res.status(500).send("Erro ao carregar a fila.");
+    }
+};
+
+exports.iniciarAtendimento = async (req, res) => {
+    try {
+        const { id } = req.params; // Aqui virá o seu 'cpf_001_...'
+        
+        // Usamos findOneAndUpdate porque o seu _id é uma String customizada
+        await Solicitacao.findOneAndUpdate(
+            { _id: id }, 
+            { status: 'Em Atendimento' }
+        );
+        
+        res.redirect('/fila-atendimento');
+    } catch (err) {
+        console.error("Erro ao iniciar atendimento:", err);
+        res.status(500).send("Erro ao atualizar status.");
     }
 };

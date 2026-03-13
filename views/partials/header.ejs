@@ -5,15 +5,11 @@
         <ul class="menu">
             <li><a href="/">Início</a></li>
             <!-- <li><a href="/cadastro">Cadastro</a></li> -->
+            <li><a href="/fila-atendimento">Fila de Atendimento</a></li>
             <li><a href="/solicitacao_atendimento">Solicitação de Atendimento</a></li>
             <li class="dropdown">
                 <a>Atendimento</a>
                 <ul class="dropdown-content">
-<!--                     <li><a href="/atendimento/apometrico">Apométrico</a></li>
-                    <li><a href="/atendimento/reiki">Reiki</a></li>
-                    <li><a href="/atendimento/auriculo">Aurículo</a></li>
-                    <li><a href="/atendimento/maos_sem_fronteiras">Mãos Sem Fronteira</a></li>
-                    <li><a href="/atendimento/homeopatico">Homeopático</a></li> -->
                     <% ((typeof terapias !== 'undefined' ? terapias : [])).forEach(t => { %>
                         <li><a href="/atendimento/<%= t.slug %>"><%= t.nome %></a></li>
                     <% }) %>
