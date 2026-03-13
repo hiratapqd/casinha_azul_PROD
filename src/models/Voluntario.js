@@ -22,6 +22,8 @@ const VoluntarioSchema = new mongoose.Schema({
         cantina: [String],
         mesa: [String]
     }
+}, { 
+    collection: 'voluntarios'
 });
 
 module.exports = mongoose.model('Voluntario', VoluntarioSchema);

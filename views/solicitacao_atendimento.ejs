@@ -26,7 +26,7 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group">
+            <div class="form-group"  style="flex: 1;">
                 <label for="cpf_assistido">CPF do Assistido:</label>
                 <input type="text" id="cpf_assistido" name="cpf_assistido" required>
             </div>
@@ -37,13 +37,13 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group">
+            <div class="form-group" style="flex: 1;">
                 <label for="sexo">Sexo:</label>
                 <input type="text" id="sexo" name="sexo">
             </div>
-            <div class="form-group">
-                <label for="idade">Idade:</label>
-                <input type="number" id="idade" name="idade">
+            <div class="form-group" style="flex: 2;">
+                <label for="data_nascimento">Data de Nascimento:</label>
+                <input type="date" id="data_nascimento" name="data_nascimento">
             </div>
             <div class="form-group">
                 <label for="religiao">Religião:</label>
@@ -52,22 +52,27 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group" style="flex: 3;">
+            <div class="form-group" style="flex: 1;">
                 <label for="cidade">Cidade:</label>
                 <input type="text" id="cidade" name="cidade">
             </div>
-            <div class="form-group" style="flex: 1;">
+            <div class="form-group" style="flex: 2;" >
                 <label for="uf">UF:</label>
                 <input type="text" id="uf" name="uf" maxlength="2">
             </div>
         </div>
 
         <div class="form-row">
-            <div class="form-group" style="flex: 2;">
+            <div class="form-group" style="flex: 1;">
                 <label for="email">email:</label>
                 <input type="email" id="email" name="email">
             </div>
-            <div class="form-group">
+            <div class="form-group" style="flex: 2;">
+                <label for="telefone">Telefone/Whatsapp:</label>
+                <input type="tel" id="telefone" name="telefone">
+            </div>
+
+            <div class="form-group"  style="flex: 3;">
                 <label for="atendimento_por">Sendo atendido pela:</label>
                 <select id="atendimento_por" name="atendimento_por">
                     <option value="Primeira vez" selected>Primeira vez</option>
@@ -78,9 +83,8 @@
                     <option value="Já passei mais vezes" >Já passei mais vezes</option>
                 </select>
             </div>
-        </div>
-
-        <div class="form-group">
+        </div><br><br>
+        <div class="form-group" style="flex: 1;">
             <label for="queixa">Breve descrição da queixa/motivo:</label>
             <textarea id="queixa" name="queixa" rows="3"></textarea>
         </div><br>
@@ -97,6 +101,42 @@
             <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitação' %>
         </button>
     </form>
+    <div id="historico-container" style="margin-top: 20px; display: none;">
+    <h3>Últimos Atendimentos</h3>
+    <table id="tabela-historico" class="form-container">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Queixa</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    // Lógica para buscar histórico ao digitar o CPF
+    document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
+        const cpf = e.target.value;
+        if (cpf.length >= 11) {
+            const resp = await fetch(`/atendimento/historico/${cpf}`);
+            const historico = await resp.json();
+            
+            const container = document.getElementById('historico-container');
+            const tbody = document.querySelector('#tabela-historico tbody');
+            tbody.innerHTML = '';
+
+            if (historico.length > 0) {
+                container.style.display = 'block';
+                historico.forEach(h => {
+                    const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
+                    tbody.innerHTML += `<tr><td>${data}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
+                });
+            }
+        }
+    });
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -141,7 +181,7 @@
                     icon: 'warning',
                     confirmButtonText: 'Entendido'
                 });
-            } else if (resultado.status === 'nao_encontrado') {
+/*             } else if (resultado.status === 'nao_encontrado') {
                 Swal.fire({
                     title: 'Assistido não encontrado',
                     text: 'O CPF informado não possui cadastro. Deseja cadastrar agora?',
@@ -150,7 +190,7 @@
                     confirmButtonText: 'Ir para Cadastro'
                 }).then((result) => {
                     if (result.isConfirmed) window.location.href = '/cadastro'; // [cite: 46]
-                });
+                }); */
             }
         } catch (error) {
             console.error('Erro:', error);

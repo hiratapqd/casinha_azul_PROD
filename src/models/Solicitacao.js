@@ -1,21 +1,16 @@
 const mongoose = require('mongoose');
 
 const SolicitacaoSchema = new mongoose.Schema({
-    _id: { type: String }, // CPF_DATA para evitar duplicidade
-    data_pedido: { type: Date, default: Date.now },
-    cpf_assistido: { type: String, required: true },
+    _id: { type: String }, // CPF_YYYY-MM-DD
     nome_assistido: { type: String, required: true },
-    sexo: String,
-    idade: Number,
-    religiao: String,
-    cidade: String,
-    uf: String,
-    email: String, 
-    atendimento_por: String, 
-    queixa: String,
+    idade_assistido: Number, // Calculado no controller
+    sendo_atendido: String, 
+    queixa_motivo: String,
+    data_pedido: { type: Date, default: Date.now },
     posicao: Number,
-    status: { type: String, default: 'Confirmado' },
-    tipo_atendimento: { type: String, default: 'apometrico' }
-}, { collection: 'solicitacoes' });
+    status: { type: String, default: 'Confirmado' }
+}, { 
+    collection: 'solicitacoes'
+});
 
 module.exports = mongoose.model('Solicitacao', SolicitacaoSchema);

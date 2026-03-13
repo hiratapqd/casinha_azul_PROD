@@ -8,7 +8,7 @@ const AtendimentoSchema = new mongoose.Schema({
     observacoes: { type: String },
     tipo: { type: String, required: true }
 }, { 
-    collection: 'atendimento' 
+    collection: 'atendimentos'
 });
 
 module.exports = mongoose.model('Atendimento', AtendimentoSchema);

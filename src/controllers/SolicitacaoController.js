@@ -2,44 +2,52 @@
 const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
 
-exports.criarSolicitacao = async (req, res) => {
+exports.criarSolicitacaoComCadastro = async (req, res) => {
     try {
-        // 1. Captura EXATAMENTE os nomes definidos no name="" do seu EJS [cite: 63, 64, 65, 68, 70, 71]
-        const { 
-            cpf_assistido, sexo, idade, religiao, 
-            cidade, uf, email, atendimento_por, queixa, subir_escada 
-        } = req.body;
+        const dados = req.body;
+        const agora = new Date();
+        const dataLocal = agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
 
-        // 2. Criar ID Único para evitar duplicidade no mesmo dia (Fuso Brasília)
-        const dataHoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); 
-        const idUnico = `${cpf_assistido}_${dataHoje}`;
+        // 1. Cálculo da Idade
+        const nasc = new Date(dados.data_nascimento);
+        let idade = agora.getFullYear() - nasc.getFullYear();
+        if (agora < new Date(agora.getFullYear(), nasc.getMonth(), nasc.getDate())) idade--;
 
-        // 3. Buscar nome do assistido no cadastro base
-        const assistido = await Assistido.findById(cpf_assistido);
-        if (!assistido) return res.json({ status: 'nao_encontrado' });
+        // 2. Gravar na Collection ASSISTIDOS (Cadastro Geral)
+        // Aqui ajustamos para os nomes de campos que você espera
+        await Assistido.findByIdAndUpdate(
+            dados.cpf_assistido, // cpf_assistido como _id
+            {
+                nome_assistido: dados.nome,
+                telefone_assistido: dados.telefone,
+                data_nascimento_assistido: dados.data_nascimento,
+                sexo_assistido: dados.sexo,
+                religiao_assistido: dados.religiao,
+                cidade_assistido: dados.cidade,
+                uf_assistido: dados.uf,
+                email_assistido: dados.email,
+                status: "Ativo" // Adicionado o campo status conforme solicitado
+            },
+            { upsert: true, new: true }
+        );
 
-        // 4. Lógica de Fila (Início do dia em Brasília)
-        const hojeInicio = new Date(dataHoje + "T00:00:00-03:00");
-        const contagem = await Solicitacao.countDocuments({
-            data_pedido: { $gte: hojeInicio }
-        });
+        // 3. Gerar ID Único para SOLICITAÇÕES (CPF + DATA)
+        const idSolicitacao = `${dados.cpf_assistido}_${dataLocal}`;
+
+        // 4. Lógica de Fila
+        const hojeInicio = new Date(dataLocal + "T00:00:00-03:00");
+        const contagem = await Solicitacao.countDocuments({ data_pedido: { $gte: hojeInicio } });
         const posicaoFila = contagem + 1;
 
-        // 5. Mapear e Salvar
+        // 5. Gravar na Collection SOLICITACOES
         const novaSolicitacao = new Solicitacao({
-            _id: idUnico,
-            cpf_assistido,
-            nome_assistido: assistido.nome, // Pega o nome oficial do cadastro
-            sexo,
-            idade,
-            religiao,
-            cidade,
-            uf,
-            email,
-            atendimento_por,
-            queixa,
-            subir_escada,
+            _id: idSolicitacao,
+            nome_assistido: dados.nome,
+            idade_assistido: idade,
+            sendo_atendido: dados.atendimento_por,
+            queixa_motivo: dados.queixa,
             posicao: posicaoFila,
+            data_pedido: agora,
             status: posicaoFila <= 30 ? 'Confirmado' : 'Espera'
         });
 
@@ -47,12 +55,22 @@ exports.criarSolicitacao = async (req, res) => {
         res.json({ status: 'sucesso', posicao: posicaoFila, limite: 30 });
 
     } catch (err) {
-        if (err.code === 11000) { // Erro de ID duplicado no MongoDB
-            return res.json({ 
-                status: 'duplicado', 
-                mensagem: 'Este CPF já realizou uma solicitação para a data de hoje.' 
-            });
+        if (err.code === 11000) {
+            return res.json({ status: 'duplicado', mensagem: 'O assistido já possui uma solicitação hoje.' });
         }
+        console.error("Erro no Controller:", err);
         res.status(500).json({ status: 'erro', mensagem: err.message });
+    }
+};
+
+exports.buscarHistorico = async (req, res) => {
+    try {
+        const { cpf } = req.params;
+        const historico = await Solicitacao.find({ _id: new RegExp(`^${cpf}`) })
+            .sort({ data_pedido: -1 })
+            .limit(12);
+        res.json(historico);
+    } catch (err) {
+        res.status(500).json([]);
     }
 };
