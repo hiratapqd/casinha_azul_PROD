@@ -27,15 +27,20 @@ const calcularEquipeAtiva = (voluntarios, mapa) => {
 
 const calcularEscalaHoje = (voluntarios, mapa) => {
     const diasRef = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
-    const hojeBrasilia = getDataBrasilia();
-    const hojeAbrev = diasRef[hojeBrasilia.getUTCDay()];
     
+    // Usamos o locale brasileiro para extrair o dia da semana correto independente do fuso do servidor
+    const hojeAbrev = new Date().toLocaleDateString('pt-BR', { weekday: 'short' })
+                                .toLowerCase()
+                                .replace('.', '') // Remove o ponto que alguns sistemas colocam (ex: sab.)
+                                .substring(0, 3); // Garante apenas 3 letras
+
     const escala = [];
     voluntarios.forEach(v => {
         const disp = v.disponibilidade || {};
         Object.entries(mapa).forEach(([label, chaves]) => {
             chaves.forEach(chave => {
                 const diasMarcados = disp[chave] || [];
+                // Comparamos o dia abreviado (ex: "sab") com o que está no banco
                 if (Array.isArray(diasMarcados) && diasMarcados.includes(hojeAbrev)) {
                     escala.push({ nome: v.nome, tipo: label });
                 }
@@ -67,13 +72,13 @@ exports.getDashboard = async (req, res) => {
         // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
         // Passo A: CPFs com Apometria antiga (> 14 dias)
         const fizeramApometriaAntiga = await Atendimento.distinct("cpf_assistido", {
-            tipo: "apometrico", // Ajustado para bater com seu print
+            tipo: "apometrico", 
             data: { $lt: limite14Dias }
         });
 
         // Passo B: CPFs com QUALQUER outro tratamento (diferente de Apometria)
         const fizeramOutros = await Atendimento.distinct("cpf_assistido", {
-            tipo: { $ne: "apometrico" } // Ajustado aqui também
+            tipo: { $ne: "apometrico" } 
         });
 
         const setOutros = new Set(fizeramOutros.map(cpf => String(cpf)));
