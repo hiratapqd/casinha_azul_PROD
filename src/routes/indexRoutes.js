@@ -19,6 +19,7 @@ router.get('/api/dados-assistido/:cpf', atendimentoController.getDadosIniciais);
 router.get('/fila-atendimento', solicitacaoController.getFilaHoje);
 router.post('/assistido/novo', assistidoController.criarAssistido); 
 router.get('/atendimento/iniciar/:id', solicitacaoController.iniciarAtendimento);
+router.post('/atendimento/reiki', atendimentoController.salvarAtendimento);
 
 
 // --- ROTAS DE VOLUNTÁRIOS (Médiuns) --- // POST para salvar

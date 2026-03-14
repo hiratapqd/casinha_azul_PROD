@@ -64,8 +64,27 @@
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#039;');
   }
+  document.getElementById('cpf_assistido').addEventListener('blur', async function() {
+      const cpf = this.value.trim();
+      if (cpf.length > 0) {
+          try {
+              // Ajuste a rota abaixo para a rota que busca o assistido no seu sistema
+              const response = await fetch(`/buscar-assistido/${cpf}`);
+              if (response.ok) {
+                  const assistido = await response.json();
+                  // Preenche o campo nome automaticamente
+                  document.getElementsByName('nome_assistido')[0].value = assistido.nome;
+                  
+                  // Opcional: Avisar que o histórico foi encontrado
+                  console.log("Assistido encontrado:", assistido.nome);
+              }
+          } catch (err) {
+              console.error("Assistido não cadastrado ou erro na busca.");
+          }
+      }
+  });
 
-  function renderHistorico(historico) {
+/*   function renderHistorico(historico) {
     if (!Array.isArray(historico) || historico.length === 0) {
       container.innerHTML = '<p style="color: #888;">Nenhum histórico encontrado para este CPF.</p>';
       return;
@@ -100,8 +119,42 @@
 
     html += '</tbody></table>';
     container.innerHTML = html;
-  }
+  } */
 
+  function renderHistorico(historico) {
+    if (!Array.isArray(historico) || historico.length === 0) {
+      container.innerHTML = '<p style="color: #888;">Nenhum histórico encontrado para este CPF.</p>';
+      return;
+    }
+
+    let html = `
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+        <thead>
+          <tr style="background-color: #f8f9fa; text-align: left;">
+            <th style="padding: 12px; border: 1px solid #ddd;">Data</th>
+            <th style="padding: 12px; border: 1px solid #ddd;">Assistido</th> <th style="padding: 12px; border: 1px solid #ddd;">Terapeuta</th>
+            <th style="padding: 12px; border: 1px solid #ddd;">Observações</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    historico.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    for (const item of historico) {
+      const dt = item?.data ? new Date(item.data) : null;
+      const dataF = dt ? dt.toLocaleString('pt-BR') : '';
+
+      html += `
+        <tr>
+          <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(dataF)}</td>
+          <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(item?.nome_assistido || 'N/A')}</td> <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(item?.voluntario || 'Não informado')}</td>
+          <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(item?.observacoes || '')}</td>
+        </tr>`;
+    }
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
   async function buscarNoCPF() {
     const cpf = cpfInput.value.trim();
     
