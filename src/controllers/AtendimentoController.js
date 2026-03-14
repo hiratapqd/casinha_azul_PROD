@@ -30,7 +30,7 @@ exports.salvarAtendimento = async (req, res) => {
     }
 };
 
-exports.getHistoricoPorCPF = async (req, res) => {
+/* exports.getHistoricoPorCPF = async (req, res) => {
     try {
         const { cpf, tipo } = req.params;
         
@@ -51,32 +51,71 @@ exports.getHistoricoPorCPF = async (req, res) => {
         console.error("Erro no histórico:", err);
         res.status(500).json({ assistido: { nome: "" }, historico: [] });
     }
+}; */
+
+// No AtendimentoController.js
+
+exports.getHistoricoPorCPF = async (req, res) => {
+    try {
+        const { cpf, tipo } = req.params;
+        
+        // Agora buscamos o CPF exatamente como ele vem (limpo do front-end)
+        const historico = await Atendimento.find({ cpf_assistido: cpf, tipo: tipo })
+            .sort({ data: -1 })
+            .limit(12);
+
+        const assistidoDoc = await Assistido.findById(cpf);
+
+        res.json({
+            assistido: { 
+                nome: assistidoDoc ? assistidoDoc.nome_assistido : (historico[0]?.nome_assistido || "") 
+            },
+            historico: historico
+        });
+    } catch (err) {
+        res.status(500).json({ assistido: { nome: "" }, historico: [] });
+    }
 };
 
 exports.getDadosIniciais = async (req, res) => {
     try {
         const { cpf } = req.params;
-        const dataLocal = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-        const idSolicitacao = `${cpf}_${dataLocal}`;
-
         const assistido = await Assistido.findById(cpf);
-        const solicitacao = await Solicitacao.findById(idSolicitacao);
-
+        
         let idade = "";
         if (assistido && assistido.data_nascimento_assistido) {
             const nasc = new Date(assistido.data_nascimento_assistido);
             const hoje = new Date();
             idade = hoje.getFullYear() - nasc.getFullYear();
-            if (hoje < new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate())) idade--;
         }
 
         res.json({
             nome: assistido ? assistido.nome_assistido : "",
             religiao: assistido ? assistido.religiao_assistido : "",
-            idade: idade,
-            // Adicionado o campo sendo_atendido vindo da solicitação
-            sendo_atendido: solicitacao ? solicitacao.sendo_atendido : "", 
-            queixa_dia: solicitacao ? solicitacao.queixa_motivo : "" 
+            idade: idade
+        });
+    } catch (err) {
+        res.status(500).json({ erro: err.message });
+    }
+};
+exports.getDadosIniciais = async (req, res) => {
+    try {
+        const { cpf } = req.params;
+        const assistido = await Assistido.findById(cpf);
+        
+        // Cálculo de idade
+        let idade = "";
+        if (assistido && assistido.data_nascimento_assistido) {
+            const nasc = new Date(assistido.data_nascimento_assistido);
+            const hoje = new Date();
+            idade = hoje.getFullYear() - nasc.getFullYear();
+        }
+
+        // Importante: os nomes das chaves aqui devem ser IGUAIS aos que o JS procura
+        res.json({
+            nome: assistido ? assistido.nome_assistido : "",
+            religiao: assistido ? assistido.religiao_assistido : "",
+            idade: idade
         });
     } catch (err) {
         res.status(500).json({ erro: err.message });

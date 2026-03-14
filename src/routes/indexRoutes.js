@@ -38,7 +38,7 @@ router.post('/atendimento/salvar', atendimentoController.salvarAtendimento);
 router.get('/visualizar_voluntarios', (req, res) => res.render('visualizar_voluntarios'));
 
 // --- ROTAS DE ATENDIMENTO (VIEWS) ---
-router.get('/atendimento/apometrico', (req, res) => res.render('atendimento/apometrico', { atendimentos: [] }));
+router.get('/atendimento/apometrico', (req, res) => res.render('atendimento/apometrico'));
 router.get('/atendimento/reiki', (req, res) => res.render('atendimento/reiki'));
 router.get('/atendimento/auriculo', (req, res) => res.render('atendimento/auriculo'));
 router.get('/atendimento/maos_sem_fronteiras', (req, res) => res.render('atendimento/maos_sem_fronteiras'));
