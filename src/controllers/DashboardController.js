@@ -1,7 +1,14 @@
 const Atendimento = require('../models/Atendimento');
 const Voluntario = require('../models/Voluntario');
 
-// --- FUNÇÃO AUXILIAR: PROCESSAR EQUIPE ATIVA ---
+// --- FUNÇÃO AUXILIAR PARA PEGAR DATA EM GMT-3 ---
+const getDataBrasilia = () => {
+    const agora = new Date();
+    const brasiliaTime = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
+    return brasiliaTime;
+};
+
+// --- FUNÇÕES AUXILIARES DE CÁLCULO ---
 const calcularEquipeAtiva = (voluntarios, mapa) => {
     const contagemResumo = {};
     Object.keys(mapa).forEach(label => {
@@ -10,8 +17,7 @@ const calcularEquipeAtiva = (voluntarios, mapa) => {
             const disp = v.disponibilidade || {};
             return chaves.some(chave => {
                 const campo = disp[chave];
-                return (Array.isArray(campo) && campo.length > 0) || 
-                       (typeof campo === 'string' && campo.trim() !== "");
+                return (Array.isArray(campo) && campo.length > 0);
             });
         });
         contagemResumo[label] = encontrados.length;
@@ -19,31 +25,21 @@ const calcularEquipeAtiva = (voluntarios, mapa) => {
     return contagemResumo;
 };
 
-// --- FUNÇÃO AUXILIAR: PROCESSAR ESCALA DO DIA ---
 const calcularEscalaHoje = (voluntarios, mapa) => {
     const diasRef = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
-    const hojeAbrev = diasRef[new Date().getDay()];
+    const hojeBrasilia = getDataBrasilia();
+    const hojeAbrev = diasRef[hojeBrasilia.getUTCDay()];
+    
     const escala = [];
-
     voluntarios.forEach(v => {
         const disp = v.disponibilidade || {};
         Object.entries(mapa).forEach(([label, chaves]) => {
-            let escaladoNestaCategoria = false;
             chaves.forEach(chave => {
-                const dados = disp[chave];
-                if (!dados) return;
-
-                let lista = Array.isArray(dados) ? dados : [dados];
-                let listaLimpa = lista.map(d => 
-                    String(d).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
-                );
-
-                if (listaLimpa.includes(hojeAbrev)) escaladoNestaCategoria = true;
+                const diasMarcados = disp[chave] || [];
+                if (Array.isArray(diasMarcados) && diasMarcados.includes(hojeAbrev)) {
+                    escala.push({ nome: v.nome, tipo: label });
+                }
             });
-
-            if (escaladoNestaCategoria) {
-                escala.push({ nome: v.nome, tipo: label });
-            }
         });
     });
     return escala;
@@ -51,46 +47,73 @@ const calcularEscalaHoje = (voluntarios, mapa) => {
 
 exports.getDashboard = async (req, res) => {
     try {
-        const hojeInicio = new Date();
-        hojeInicio.setHours(0, 0, 0, 0);
-        const hojeFim = new Date();
-        hojeFim.setHours(23, 59, 59, 999);
+        const hojeBrasilia = getDataBrasilia();
+        
+        const hojeInicio = new Date(hojeBrasilia);
+        hojeInicio.setUTCHours(0, 0, 0, 0);
+        
+        const hojeFim = new Date(hojeBrasilia);
+        hojeFim.setUTCHours(23, 59, 59, 999);
 
-        // Busca dados em paralelo para performance 
+        const limite14Dias = new Date(hojeBrasilia);
+        limite14Dias.setUTCDate(limite14Dias.getUTCDate() - 14);
+
+        // 1. Buscas no Banco (Campo 'data' conforme o print)
         const [totalAtendimentosHoje, voluntariosDB] = await Promise.all([
             Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim } }),
             Voluntario.find({ esta_ativo: { $ne: "Não" } }).lean()
         ]);
 
-        // Mapa corrigido com "apometrico" e "homeopatico" 
+        // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
+        // Passo A: CPFs com Apometria antiga (> 14 dias)
+        const fizeramApometriaAntiga = await Atendimento.distinct("cpf_assistido", {
+            tipo: "apometrico", // Ajustado para bater com seu print
+            data: { $lt: limite14Dias }
+        });
+
+        // Passo B: CPFs com QUALQUER outro tratamento (diferente de Apometria)
+        const fizeramOutros = await Atendimento.distinct("cpf_assistido", {
+            tipo: { $ne: "apometrico" } // Ajustado aqui também
+        });
+
+        const setOutros = new Set(fizeramOutros.map(cpf => String(cpf)));
+
+        // Passo C: Abandono = Fez apometria antiga mas nunca apareceu em outros
+        const abandonosReais = fizeramApometriaAntiga.filter(cpf => !setOutros.has(String(cpf)));
+        
+        const assistidosUnicos = await Atendimento.distinct("cpf_assistido");
+        const taxaAbandono = assistidosUnicos.length > 0 
+            ? ((abandonosReais.length / assistidosUnicos.length) * 100).toFixed(1) 
+            : 0;
+
+        // 3. Mapeamento Geral
         const mapaGeral = {
-            "Apometria": ["apometrico"],
+            "Apometria": ["apometria"],
             "Reiki": ["reiki"],
             "Aurículo": ["auriculo"],
             "Mãos sem Fronteiras": ["maos"],
-            "Homeopatia": ["homeopatico"],
+            "Homeopatia": ["homeopatia"],
             "Passe": ["passe"],
             "Cantina": ["cantina"],
             "Mesa": ["mesa"]
         };
 
-        // Agora as variáveis são definidas corretamente 
         const voluntariosPorTipo = calcularEquipeAtiva(voluntariosDB, mapaGeral);
         const escala_hoje = calcularEscalaHoje(voluntariosDB, mapaGeral);
 
         res.render('index', {
             resumo: {
                 hoje: totalAtendimentosHoje,
-                taxaAbandono: 33.3, 
-                apometriaUnica: 0, 
-                voluntariosPorTipo, // Enviando para o index.ejs 
+                taxaAbandono: taxaAbandono, 
+                apometriaUnica: abandonosReais.length, 
+                voluntariosPorTipo,
                 totalVoluntarios: voluntariosDB.length
             },
-            escala_hoje // Enviando para o index.ejs 
+            escala_hoje
         });
 
     } catch (err) {
-        console.error("❌ Erro no DashboardController:", err);
-        res.status(500).send("Erro ao carregar o painel.");
+        console.error("Erro no Dashboard:", err);
+        res.status(500).send("Erro ao carregar dashboard.");
     }
 };
