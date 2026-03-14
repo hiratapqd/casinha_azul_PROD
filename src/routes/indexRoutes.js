@@ -12,6 +12,7 @@ router.get('/', dashboardController.getDashboard);
 
 // API para carregar o histórico no CPF (usada pelo script do formulário)
 router.get('/api/historico/:tipo/:cpf', atendimentoController.getHistoricoPorCPF);
+router.get('/api/dados-assistido/:cpf', atendimentoController.getDadosIniciais);
 
 // --- ROTAS DE CADASTRO (VIEW) ---
 // router.get('/cadastro', assistidoController.renderFormCadastro); // GET para ver o form

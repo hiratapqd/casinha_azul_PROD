@@ -42,10 +42,10 @@
             </div>
         </div><br><br>
         <div class="form-row">
-          <div class="form-group">
+<!--           <div class="form-group">
               <label>Queixa:</label>
               <textarea name="queixa_motivo" class="campo-grande"></textarea>
-          </div>
+          </div> -->
           <div class="form-group">
               <label>Observações:</label>
               <textarea name="observacoes" class="campo-grande" placeholder="Digite aqui os detalhes do atendimento..."></textarea>
@@ -121,29 +121,43 @@
     container.innerHTML = html;
   }
 
- async function buscarNoCPF() {
+async function buscarNoCPF() {
     const cpf = cpfInput.value.trim();
-    // Pega o valor 'apometrico' do campo hidden
-    const tipo = document.querySelector('input[name="tipo"]').value; 
-    
     if (!cpf) return;
-    container.innerHTML = '<p>Buscando histórico...</p>';
 
     try {
-        // A URL correta conforme seu indexRoutes.js é /api/historico/:tipo/:cpf
+        // 1. Mantém o carregamento do histórico que você já tem
+        const tipo = document.querySelector('input[name=\"tipo\"]').value;
         const rHist = await fetch(`/api/historico/${tipo}/${encodeURIComponent(cpf)}`);
-        
-        if (!rHist.ok) {
-            const txt = await rHist.text();
-            throw new Error(`Histórico HTTP ${rHist.status}`);
+        if (rHist.ok) {
+            const historico = await rHist.json();
+            renderHistorico(historico);
         }
 
-        const historico = await rHist.json();
-        renderHistorico(historico);
-        
+        // 2. NOVA BUSCA: Dados Cadastrais e Queixa do Dia
+        const rDados = await fetch(`/api/dados-assistido/${encodeURIComponent(cpf)}`);
+        const info = await rDados.json();
+
+        if (info) {
+            // Preenche Nome
+            document.querySelector('input[name=\"nome_assistido\"]').value = info.nome || "";
+            // Preenche Idade
+            document.querySelector('input[name=\"idade_assistido\"]').value = info.idade || "";
+            // Preenche Religião
+            document.querySelector('input[name=\"religiao_assistido\"]').value = info.religiao || "";
+            const campoSendoAtendido = document.querySelector('input[name="sendo_atendido"]');
+            if (campoSendoAtendido) {
+                campoSendoAtendido.value = info.sendo_atendido || "Não informado";
+            }
+            const campoObs = document.querySelector('textarea[name=\"observacoes\"]');
+            if (info.queixa_dia) {
+                campoObs.value = `QUEIXA NA RECEPÇÃO: ${info.queixa_dia}\n\nATENDIMENTO: `;
+            } else {
+                campoObs.value = "";
+            }
+        }
     } catch (err) {
-        console.error('Erro ao carregar histórico:', err);
-        container.innerHTML = `<p style="color: red;">Erro ao carregar histórico.</p>`;
+        console.error('Erro ao buscar dados do assistido:', err);
     }
 }
 
