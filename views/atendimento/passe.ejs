@@ -3,218 +3,116 @@
 <main class="hero">
     <h1>Ficha de Atendimento - Passe</h1>
     
-    <form action="/atendimento/passe" method="POST" class="form-container">
+    <form action="/atendimento/salvar" method="POST" class="form-container" id="atendimentoForm">
         <input type="hidden" name="tipo" value="passe">
         
         <div class="form-row">
             <div class="form-group">
                 <label>Data:</label>
-                <input type="date" name="data" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                <input type="date" name="data" id="campo_data" required>
             </div>
             <div class="form-group flex-2">
                 <label>CPF:</label>
-                <input type="text" id="cpf_assistido" name="cpf_assistido" required>
+                <input type="text" id="cpf_assistido" name="cpf_assistido" placeholder="Apenas números" required autocomplete="off">
             </div>
         </div>
+
         <div class="form-row">
-        <div class="form-group">
-            <label>Nome:</label>
-            <input type="text" name="nome_assistido" required>
+            <div class="form-group">
+                <label>Nome:</label>
+                <input type="text" name="nome_assistido" id="campo_nome" required>
+            </div>
+
+            <div class="form-group">
+                <label>Terapeuta Responsável:</label>
+                <input type="text" name="voluntario" required>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>Terapeuta Responsável:</label>
-            <input type="text" name="voluntario" required>
-        </div>
-        </div>
         <div class="form-group">
             <label>Observações:</label>
             <textarea name="observacoes" rows="4"></textarea>
         </div><br><br>
 
-        <button type="submit" class="btn-submit">Salvar Atendimento</button>
+        <button type="submit" class="btn-primary">Finalizar o Atendimento</button>
     </form>
 
-<section class="historico" style="margin-top: 40px;">
-        <h2>Últimos 12 Atendimentos de passe</h2>
-        <div id="container-historico">
-            <p style="color: #888;">Digite o CPF para carregar o histórico.</p>
+    <section class="historico-section" style="margin-top: 30px;">
+        <h2>Histórico de Passes</h2>
+        <div id="historicoContainer" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <p>Digite o CPF para carregar o histórico.</p>
         </div>
     </section>
-
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-(() => {
-  const form = document.querySelector('form.form-container') || document.querySelector('form');
-  const cpfInput = document.getElementById('cpf_assistido');
-  const container = document.getElementById('container-historico');
-  const nomeInput = document.querySelector('input[name="nome_assistido"]');
+  // 1. Data automática
+  document.getElementById('campo_data').value = new Date().toISOString().split('T')[0];
 
-  if (!form || !cpfInput || !container) {
-    console.error("Elementos obrigatórios não encontrados (form/cpf_assistido/container-historico).");
-    return;
-  }
-
-  function escapeHtml(str) {
-    return String(str ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
-
-  function renderHistorico(historico) {
-    if (!Array.isArray(historico) || historico.length === 0) {
-      container.innerHTML = '<p style="color: #888;">Nenhum histórico encontrado para este CPF.</p>';
+  // 2. Função para desenhar a tabela
+  const renderizarTabela = (lista) => {
+    const container = document.getElementById('historicoContainer');
+    if (!lista || lista.length === 0) {
+      container.innerHTML = '<p>Nenhum histórico de Passe encontrado.</p>';
       return;
     }
 
-    let html = `
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-        <thead>
-          <tr style="background-color: #f8f9fa; text-align: left;">
-            <th style="padding: 12px; border: 1px solid #ddd;">Data</th>
-            <th style="padding: 12px; border: 1px solid #ddd;">Terapeuta</th>
-            <th style="padding: 12px; border: 1px solid #ddd;">Observações</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-    // já vem ordenado do backend; se quiser reforçar:
-    historico.sort((a, b) => new Date(b.data) - new Date(a.data));
-
-    for (const item of historico) {
-      // agora você já está salvando timestamp, então faz sentido mostrar data + hora
-      const dt = item?.data ? new Date(item.data) : null;
-      const dataF = dt ? dt.toLocaleString('pt-BR') : '';
-
-      html += `
-        <tr>
-          <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(dataF)}</td>
-          <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(item?.voluntario || 'Não informado')}</td>
-          <td style="padding: 12px; border: 1px solid #ddd;">${escapeHtml(item?.observacoes || '')}</td>
-        </tr>`;
-    }
-
-    html += '</tbody></table>';
+    let html = '<table style="width:100%; border-collapse: collapse; margin-top:10px;">';
+    html += '<tr style="background:#f4f4f4"><th style="padding:8px; border:1px solid #ddd;">Data</th><th style="padding:8px; border:1px solid #ddd;">Terapeuta</th><th style="padding:8px; border:1px solid #ddd;">Obs</th></tr>';
+    lista.forEach(item => {
+      const d = new Date(item.data).toLocaleDateString('pt-BR');
+      html += `<tr>
+        <td style="border:1px solid #ddd; padding:8px;">${d}</td>
+        <td style="border:1px solid #ddd; padding:8px;">${item.voluntario || ''}</td>
+        <td style="border:1px solid #ddd; padding:8px;">${item.observacoes || ''}</td>
+      </tr>`;
+    });
+    html += '</table>';
     container.innerHTML = html;
-  }
+  };
 
-  async function buscarNoCPF() {
-    const cpf = cpfInput.value.trim();
-    
-    if (!cpf) return;
-
-    const cacheBust = `?ts=${Date.now()}`;
-    container.innerHTML = '<p>Buscando histórico...</p>';
+  // 3. Busca de Nome e Histórico
+  document.getElementById('cpf_assistido').addEventListener('blur', async function() {
+    const cpf = this.value.trim().replace(/\D/g, '');
+    if (cpf.length < 11) return;
 
     try {
-      // Preferir o endpoint que já traz {assistido, historico}
-      const rHist   = await fetch(`/api/historico/passe/${encodeURIComponent(cpf)}${cacheBust}`, { cache: "no-store" });
-      const txt = await rHist.text();
-      if (!rHist.ok) throw new Error(`Histórico HTTP ${rHist.status} - ${txt}`);
+      // Busca Nome
+      const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
+      document.getElementById('campo_nome').value = resDados.nome || "";
 
-      let payload;
-      try {
-        payload = JSON.parse(txt);
-      } catch {
-        throw new Error('Histórico não retornou JSON');
-      }
-
-      // Seu backend pode retornar:
-      // 1) array (antigo) => [...]
-      // 2) objeto (novo) => { assistido: {...}, historico: [...] }
-      const historico = Array.isArray(payload) ? payload : (payload.historico || []);
-      const assistidoNome = Array.isArray(payload) ? '' : (payload.assistido?.nome || '');
-
-      if (nomeInput) {
-        if (assistidoNome) {
-          nomeInput.value = assistidoNome;
-        } else {
-          // fallback: buscar nome no endpoint /api/assistido
-          const rAssist = await fetch(`/api/assistido/${encodeURIComponent(cpf)}${cacheBust}`, { cache: "no-store" });
-          if (rAssist.ok) {
-            const assistido = await rAssist.json();
-            nomeInput.value = assistido?.nome || '';
-          } else {
-            nomeInput.value = '';
-          }
-        }
-      }
-
-      renderHistorico(historico);
-
+      // Busca Histórico (tipo passe)
+      const resHist = await fetch(`/api/historico/passe/${cpf}`).then(r => r.json());
+      renderizarTabela(resHist.historico || []);
     } catch (err) {
-      console.error('Erro ao carregar histórico:', err);
-      container.innerHTML = `
-        <p style="color: red;">
-          Erro ao carregar histórico.<br>
-          <small>${escapeHtml(err.message || err)}</small>
-        </p>`;
-    }
-  }
-
-  cpfInput.addEventListener('blur', buscarNoCPF);
-  cpfInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      cpfInput.blur();
+      console.error('Erro na busca:', err);
     }
   });
 
-  // ===== SALVAR com SweetAlert =====
-  form.addEventListener('submit', async (e) => {
+  // 4. Envio via AJAX
+  document.getElementById('atendimentoForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const btn = form.querySelector('button[type="submit"], input[type="submit"]');
-    const oldBtnText = btn && 'textContent' in btn ? btn.textContent : null;
+    const form = e.target;
+    const btn = form.querySelector('button');
+    btn.disabled = true;
 
     try {
-      if (btn) {
-        btn.disabled = true;
-        if ('textContent' in btn) btn.textContent = 'Salvando...';
-      }
-
       const body = new URLSearchParams(new FormData(form));
-
-      const r = await fetch(form.action, {
+      const resp = await fetch(form.action, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body
       });
 
-      if (!r.ok) {
-        const t = await r.text().catch(() => '');
-        throw new Error(t || `HTTP ${r.status}`);
-      }
+      if (!resp.ok) throw new Error('Erro ao salvar no servidor');
 
-      await Swal.fire({
-        icon: 'success',
-        title: 'Atendimento salvo com sucesso!',
-        text: 'Clique em OK para iniciar um novo atendimento de Passe.',
-        confirmButtonText: 'OK'
-      });
-
-      window.location.href = '/atendimento/passe';
-
+      await Swal.fire('Sucesso', 'Atendimento de Passe salvo!', 'success');
+      window.location.reload();
     } catch (err) {
-      console.error('Erro ao salvar:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Erro ao salvar',
-        text: err?.message || 'Ocorreu um erro ao salvar o atendimento.'
-      });
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        if ('textContent' in btn && oldBtnText != null) btn.textContent = oldBtnText;
-      }
+      Swal.fire('Erro', err.message, 'error');
+      btn.disabled = false;
     }
   });
-})();
 </script>
-
-</main>
 <%- include('../partials/footer') %>
