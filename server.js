@@ -2,11 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const connectDB = require('./src/config/db'); // Importa o novo módulo de conexão
+const app = express();
 
 // Importação das Rotas (que criaremos nos próximos passos)
 const indexRoutes = require('./src/routes/indexRoutes');
-
-const app = express();
 
 // --- 1. CONEXÃO COM O BANCO ---
 connectDB();

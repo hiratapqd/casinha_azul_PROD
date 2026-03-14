@@ -23,7 +23,7 @@ router.get('/atendimento/iniciar/:id', solicitacaoController.iniciarAtendimento)
 
 // --- ROTAS DE VOLUNTÁRIOS (Médiuns) --- // POST para salvar
 router.get('/cadastro_mediuns', (req, res) => res.render('cadastro_mediuns'));
-router.post('/voluntario/novo', voluntarioController.criarVoluntario);
+router.post('/medium/novo', voluntarioController.criarVoluntario);
 router.get('/visualizar_voluntarios', voluntarioController.getVisualizarVoluntarios);
 
 // --- ROTAS DE ATENDIMENTO ---

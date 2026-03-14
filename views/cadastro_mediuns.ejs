@@ -2,7 +2,9 @@
     <link rel="stylesheet" href="/styles/styles.css">
 <main class="hero">
     <h1>Cadastro dos mediuns</h1>
-    <form action="/mediun/novo" method="POST" class="form-container">
+    <!-- <form action="/medium/novo" method="POST" class="form-container"> -->
+    <form id="formVoluntario" action="/medium/novo" method="POST" class="form-container">
+        <input type="hidden" id="forceUpdate" name="forceUpdate" value="false">
     <div class="form-row">
         <div class="form-group">
             <label for="nome">Nome Completo:</label>
@@ -56,7 +58,8 @@
                 <div class="checkbox-group">
                     <% dias.forEach(dia => { %>
                         <label class="check-item">
-                            <input type="checkbox" name="voluntario_<%= mod.id %>_dias" value="<%= dia.toLowerCase() %>">
+                            <!-- <input type="checkbox" name="voluntario_<%= mod.id %>_dias" value="<%= dia.toLowerCase() %>"> -->
+                             <input type="checkbox" name="disp_<%= mod.id %>" value="<%= dia.toLowerCase() %>">
                             <span><%= dia %></span>
                         </label>
                     <% }) %>
@@ -75,79 +78,56 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    const form = document.querySelector('.form-container');
+    const form = document.getElementById('formVoluntario');
 
     form.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Impede o envio padrão
-
+        e.preventDefault(); // Impede o envio padrão que causa a página branca
+        
         const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-        
-        // Como o FormData não pega múltiplos checkboxes do mesmo nome automaticamente como array:
-        // Precisamos ajustar para enviar os arrays de disponibilidade corretamente se usar JSON,
-        // mas para facilitar, vamos usar o envio tradicional via fetch:
-        
-        enviarFormulario();
-    });
+        const dados = Object.fromEntries(formData.entries());
 
-    async function enviarFormulario() {
-    const formElement = document.querySelector('.form-container');
-    const formData = new FormData(formElement);
-    
-    // Convertendo FormData para um objeto simples para enviar como JSON
-    const dados = {};
-    formData.forEach((value, key) => {
-        // Se o campo já existe (como nos checkboxes de dias), transforma em array
-        if (dados[key]) {
-            if (!Array.isArray(dados[key])) {
-                dados[key] = [dados[key]];
-            }
-            dados[key].push(value);
-        } else {
-            dados[key] = value;
-        }
-    });
-
-    try {
-        const resposta = await fetch('/mediun/novo', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json' // Informamos que estamos enviando JSON
-            },
-            body: JSON.stringify(dados) // Transformamos o objeto em texto JSON
+        // Captura manual das disponibilidades para garantir o formato de Array no MongoDB
+        const terapias = ['apometria', 'reiki', 'auriculo', 'maos', 'homeopatia', 'passe', 'cantina', 'mesa'];
+        terapias.forEach(terapia => {
+            // Busca pelos checkboxes que agora seguem o padrão name="disp_terapia"
+            const marcados = Array.from(form.querySelectorAll(`input[name="disp_${terapia}"]:checked`))
+                                  .map(cb => cb.value);
+            dados[`disp_${terapia}`] = marcados; 
         });
 
-        const resultado = await resposta.json(); [cite: 24]
+        try {
+            const resposta = await fetch('/medium/novo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
 
-        if (resultado.status === 'conflito') { [cite: 24]
-            Swal.fire({
-                title: 'CPF já cadastrado!',
-                text: "Deseja atualizar os dados deste voluntário?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sim, atualizar!',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('forceUpdate').value = 'true';
-                    enviarFormulario(); // Reenvia com forceUpdate=true
-                }
-            });
-        } else if (resultado.status === 'sucesso') { [cite: 27]
-            Swal.fire(
-                'Concluído!',
-                resultado.acao === 'atualizado' ? 'Dados atualizados.' : 'Cadastrado com sucesso.',
-                'success'
-            ).then(() => {
-                window.location.href = '/'; // Só redireciona DEPOIS que o usuário clica no OK do alerta
-            });
+            const resultado = await resposta.json();
+
+            if (resultado.status === 'conflito') {
+                Swal.fire({
+                    title: 'CPF já cadastrado!',
+                    text: "Deseja atualizar os dados deste voluntário?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, atualizar!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('forceUpdate').value = 'true';
+                        form.requestSubmit(); // Reenvia o formulário com o flag de atualização
+                    }
+                });
+            } else if (resultado.status === 'sucesso') {
+                Swal.fire('Sucesso!', 'Dados gravados com sucesso.', 'success')
+                    .then(() => window.location.href = '/visualizar_voluntarios');
+            }
+        } catch (err) {
+            console.error("Erro no envio:", err);
+            Swal.fire('Erro!', 'Falha ao comunicar com o servidor.', 'error');
         }
-    } catch (err) {
-        console.error("Erro na requisição:", err);
-        Swal.fire('Erro!', 'Não foi possível se comunicar com o servidor.', 'error');
-    }
-    }
-
+    });
 </script>
+
 </main>
 <%- include('partials/footer') %>
