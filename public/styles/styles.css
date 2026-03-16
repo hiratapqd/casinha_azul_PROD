@@ -391,3 +391,26 @@ textarea {
 input[type="text"] {
     text-transform: capitalize;
 }
+.badge-editora {
+    background-color: #f0f4f8;
+    color: #555;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    border: 1px solid #d1d9e0;
+    text-transform: uppercase;
+}
+/* Remove as bolinhas de qualquer lista dentro do nav ou dropdown */
+nav ul, 
+.dropdown-content, 
+.dropdown-menu {
+    list-style: none; /* Aqui é onde a mágica acontece */
+    padding: 0;
+    margin: 0;
+}
+
+/* Garante que os itens da lista não tenham marcadores */
+nav li, 
+.dropdown-content li {
+    list-style-type: none;
+}
