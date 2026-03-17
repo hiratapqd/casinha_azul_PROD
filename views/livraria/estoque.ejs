@@ -37,7 +37,7 @@
     </div>
 
     <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
-        <a href="/livraria/cadastro" class="btn-atender" style="background-color: #28a745;">+ Cadastrar Novo Livro</a>
+        <a href="/livraria/cadastro" class="btn-atender btn-success" style="background-color: #28a745;">+ Cadastrar Novo Livro</a>
     </div>
 
     <div class="card">
@@ -97,7 +97,7 @@
                             <a href="/livraria/editar/<%= livro._id %>" class="muted">Editar</a>
                             <div style="display: flex; gap: 5px; align-items: center; border-left: 1px solid #ddd; padding-left: 10px;">
                                 <input type="number" id="qtd-<%= livro._id %>" value="1" min="1" style="width: 40px; text-align: center;">
-                                <button onclick="vender('<%= livro._id %>')" class="btn-atender" style="background-color: #28a745; padding: 5px 10px; font-size: 12px;">
+                                <button onclick="vender('<%= livro._id %>')" class="btn-atender btn-success" style="background-color: #28a745; padding: 5px 10px; font-size: 12px;">
                                     Vender
                                 </button>
                             </div>

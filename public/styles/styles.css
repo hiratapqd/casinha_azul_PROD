@@ -349,29 +349,61 @@ th {
     color: white;
 }
 
-.btn-atender {
+.btn-atender, .btn-confirmar {
     text-decoration: none;
     background: #1277bb;
     color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+    padding: 10px 20px; 
+    border-radius: 8px;   
+    font-size: 0.95rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.1s ease; 
+
+    box-shadow: 0 5px 0 #0d5a8f; 
 }
 
-.btn-atender:hover {
-    background: #0d5a8f;
+.btn-atender:hover, .btn-confirmar:hover {
+    background: #1585d1;
+    transform: translateY(-2px); 
+    box-shadow: 0 7px 0 #0d5a8f; 
 }
+
+.btn-atender:active, .btn-confirmar:active {
+    background: #0d5a8f;
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #0d5a8f; 
+}
+
+.btn-success.btn-atender {
+    background-color: #28a745;
+    box-shadow: 0 5px 0 #1e7e34;
+}
+.btn-success.btn-atender:hover {
+    background-color: #218838;
+    box-shadow: 0 7px 0 #1e7e34;
+}
+.btn-success.btn-atender:active {
+    box-shadow: 0 1px 0 #1e7e34;
+    box-shadow: 0 1px 0 #1e7e34
+}
+
 textarea {
     width: 100%; 
-    min-height: 150px; /* Altura mínima (mais alta) */
+    min-height: 150px; 
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1rem;
-    resize: vertical; /* Permite que o usuário aumente a altura, mas não a largura */
+    resize: vertical; 
 }
 
-/* Se quiser uma caixa ainda maior para observações específicas */
+
 .campo-grande {
     min-height: 250px; /* Bem mais alta */
 }

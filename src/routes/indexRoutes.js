@@ -8,13 +8,17 @@ const solicitacaoController = require('../controllers/SolicitacaoController');
 const atendimentoController = require('../controllers/AtendimentoController');
 const relatorioController = require('../controllers/RelatorioController');
 const livrariaController = require('../controllers/LivrariaController');
+const RecepcaoController = require('../controllers/RecepcaoController');
+const ConfiguracaoFluxo = require('../models/ConfiguracaoFluxo');
 
 // --- ROTA PRINCIPAL (DASHBOARD) ---
 router.get('/', dashboardController.getDashboard);
 
 // API para carregar o histórico no CPF (usada pelo script do formulário)
-router.get('/api/historico/:tipo/:cpf', atendimentoController.getHistoricoPorCPF);
+//router.get('/api/historico/:tipo/:cpf', atendimentoController.getHistoricoPorCPF);
+router.get('/api/historico/:tipo/:cpf', atendimentoController.getHistoricoPorTipo); 
 router.get('/api/dados-assistido/:cpf', atendimentoController.getDadosIniciais);
+//router.get('/api/dados-assistido/:cpf', atendimentoController.getDadosIniciais);
 
 // --- ROTAS DE CADASTRO (VIEW) ---
 // router.get('/cadastro', assistidoController.renderFormCadastro); // GET para ver o form
@@ -59,5 +63,9 @@ router.post('/livraria/venda', livrariaController.registrarVenda);
 router.get('/livraria/editar/:id', livrariaController.getEditarLivro);
 router.post('/livraria/atualizar/:id', livrariaController.atualizarLivro);
 router.post('/livraria/venda-rapida', livrariaController.registrarVendaRapida);
+
+// Página da Recepção (passando as configs para gerar os checkboxes)
+router.get('/recepcao', RecepcaoController.exibirPaginaRecepcao); 
+router.post('/api/recepcao/checkin', RecepcaoController.realizarCheckin);
 
 module.exports = router;
