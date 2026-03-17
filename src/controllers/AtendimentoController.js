@@ -34,65 +34,65 @@ exports.getHistoricoPorCPF = async (req, res) => {
     try {
         const { cpf, tipo } = req.params;
         
-        // Agora buscamos o CPF exatamente como ele vem (limpo do front-end)
+        // 1. Busca atendimentos anteriores
         const historico = await Atendimento.find({ cpf_assistido: cpf, tipo: tipo })
             .sort({ data: -1 })
-            .limit(12);
+            .limit(12).lean();
 
-        const assistidoDoc = await Assistido.findById(cpf);
+        // 2. Busca a Queixa de hoje (Construindo o ID: CPF_ANO-MES-DIA)
+        const hoje = new Date().toISOString().split('T')[0];
+        const idSolicitacao = `${cpf}_${hoje}`;
+        
+        const solicitacao = await Solicitacao.findById(idSolicitacao).lean();
 
         res.json({
-            assistido: { 
-                nome: assistidoDoc ? assistidoDoc.nome_assistido : (historico[0]?.nome_assistido || "") 
-            },
-            historico: historico
+            historico: historico,
+            // Se não achar pelo ID composto, tentamos uma busca geral por CPF com status não atendido
+            queixa_atual: solicitacao ? solicitacao.queixa_motivo : ""
         });
     } catch (err) {
-        res.status(500).json({ assistido: { nome: "" }, historico: [] });
+        console.error("Erro ao buscar histórico/queixa:", err);
+        res.status(500).json({ historico: [], queixa_atual: "" });
     }
 };
 
-exports.getDadosIniciais = async (req, res) => {
+/* exports.getDadosIniciais = async (req, res) => {
     try {
-        const { cpf } = req.params;
-        const assistido = await Assistido.findById(cpf);
+        const cpfLimpo = req.params.cpf.replace(/\D/g, '');
+         const assistido = await Assistido.findById(req.params.cpf).lean();
+        //const assistido = await Assistido.findOne({ cpf_assistido: req.params.cpf }).lean();
         
-        let idade = "";
-        if (assistido && assistido.data_nascimento_assistido) {
-            const nasc = new Date(assistido.data_nascimento_assistido);
-            const hoje = new Date();
-            idade = hoje.getFullYear() - nasc.getFullYear();
+        if (!assistido) {
+            console.log("Assistido não encontrado para o ID (CPF):", cpfLimpo);
+            return res.status(404).json(null);
         }
-
-        res.json({
-            nome: assistido ? assistido.nome_assistido : "",
-            religiao: assistido ? assistido.religiao_assistido : "",
-            idade: idade
-        });
+        res.json(assistido); 
     } catch (err) {
-        res.status(500).json({ erro: err.message });
+        console.error("Erro ao buscar dados iniciais:", err);
+        res.status(500).json(null);
     }
 };
+ */
 exports.getDadosIniciais = async (req, res) => {
     try {
-        const { cpf } = req.params;
-        const assistido = await Assistido.findById(cpf);
+        const cpf = req.params.cpf;
         
-        // Cálculo de idade
-        let idade = "";
-        if (assistido && assistido.data_nascimento_assistido) {
-            const nasc = new Date(assistido.data_nascimento_assistido);
-            const hoje = new Date();
-            idade = hoje.getFullYear() - nasc.getFullYear();
+        // Tentativa 1: Buscar pelo _id (Já que seu CPF é o _id)
+        let assistido = await Assistido.findById(cpf).lean();
+
+        // Tentativa 2: Se não achar, busca pelo campo cpf_assistido (segurança)
+        if (!assistido) {
+            assistido = await Assistido.findOne({ cpf_assistido: cpf }).lean();
+        }
+        
+        if (!assistido) {
+            return res.status(404).json(null);
         }
 
-        // Importante: os nomes das chaves aqui devem ser IGUAIS aos que o JS procura
-        res.json({
-            nome: assistido ? assistido.nome_assistido : "",
-            religiao: assistido ? assistido.religiao_assistido : "",
-            idade: idade
-        });
+        // Garante que o objeto tenha o campo nome_assistido para o front-end
+        res.json(assistido);
     } catch (err) {
-        res.status(500).json({ erro: err.message });
+        console.error("Erro ao buscar assistido:", err);
+        res.status(500).json(null);
     }
 };

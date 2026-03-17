@@ -47,99 +47,123 @@
     <section class="historico-section" style="margin-top: 30px;">
         <h2>Histórico de Atendimentos</h2>
         <div id="historicoContainer" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
-            <p id="msg_status">Digite o CPF para carregar os dados.</p>
+            <table class="historico-table" id="tabela-historico" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f4f4f4; text-align: left;">
+                        <th style="padding: 10px; border-bottom: 2px solid #ddd;">Data</th>
+                        <th style="padding: 10px; border-bottom: 2px solid #ddd;">Observações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2" id="msg_status" style="text-align:center; padding: 20px;">Digite o CPF para carregar os dados.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  // 1. Definição da Data de Hoje
-  document.getElementById('campo_data').value = new Date().toISOString().split('T')[0];
+  // 1. CONFIGURAÇÃO DA DATA ATUAL
+  const inputData = document.getElementById('campo_data');
+  if (inputData) inputData.value = new Date().toISOString().split('T')[0];
 
-  // 2. FUNÇÃO QUE DESENHA A TABELA (Definida primeiro!)
-  const renderizarTabelaApometria = (lista) => {
-    const container = document.getElementById('historicoContainer');
-    console.log("Renderizando lista:", lista);
-    
+  // 2. FUNÇÃO RENDERIZAR TABELA (Ajustada para o novo ID)
+  function renderizarTabela(lista) {
+    const corpoTabela = document.querySelector('#tabela-historico tbody');
+    if (!corpoTabela) return;
+
+    corpoTabela.innerHTML = ''; // Limpa a mensagem inicial ou dados antigos
+
     if (!lista || lista.length === 0) {
-      container.innerHTML = '<p>Nenhum histórico encontrado para este CPF.</p>';
+      corpoTabela.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 10px;">Nenhum atendimento anterior encontrado.</td></tr>';
       return;
     }
 
-    let html = '<table style="width:100%; border-collapse: collapse; margin-top:10px;">';
-    html += '<tr style="background:#f4f4f4"><th style="padding:8px; border:1px solid #ddd;">Data</th><th style="padding:8px; border:1px solid #ddd;">Terapeuta</th><th style="padding:8px; border:1px solid #ddd;">Observações</th></tr>';
-    
     lista.forEach(item => {
-      const dataF = item.data ? new Date(item.data).toLocaleDateString('pt-BR') : '---';
-      html += `<tr>
-        <td style="border:1px solid #ddd; padding:8px;">${dataF}</td>
-        <td style="border:1px solid #ddd; padding:8px;">${item.voluntario || ''}</td>
-        <td style="border:1px solid #ddd; padding:8px;">${item.observacoes || ''}</td>
-      </tr>`;
+      const dataFormatada = new Date(item.data).toLocaleDateString('pt-BR');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFormatada}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.observacoes || ''}</td>
+      `;
+      corpoTabela.appendChild(tr);
     });
-    
-    html += '</table>';
-    container.innerHTML = html;
-  };
+  }
 
-  // 3. EVENTO DE BUSCA (Chama a função acima)
+  // 3. EVENTO DE BUSCA AO SAIR DO CAMPO CPF
   document.getElementById('cpf_assistido').addEventListener('blur', async function() {
-    const cpfRaw = this.value.trim();
-    const cpf = cpfRaw.replace(/\D/g, ''); // Limpa para ficar só números
-    
-    if (cpf.length < 11) {
-        console.log("CPF incompleto, aguardando...");
-        return;
-    }
+      const cpf = this.value.trim().replace(/\D/g, '');
+      if (cpf.length < 11) return;
 
-    const container = document.getElementById('historicoContainer');
-    container.innerHTML = '<p>Buscando dados...</p>';
+      try {
+          console.log("LOG: Buscando dados para o CPF:", cpf);
 
-    try {
-      // Busca Dados Cadastrais e Histórico em paralelo
-      const [resDados, resHist] = await Promise.all([
-        fetch(`/api/dados-assistido/${cpf}`).then(r => r.json()),
-        fetch(`/api/historico/apometrico/${cpf}`).then(r => r.json())
-      ]);
+          // Chamada 1: Dados Cadastrais
+          const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
+          if (resDados) {
+              document.getElementById('campo_nome').value = resDados.nome_assistido || "";
+              document.getElementById('campo_religiao').value = resDados.religiao_assistido || "";
+              
+              if (resDados.data_nascimento_assistido) {
+                  const dataNasc = new Date(resDados.data_nascimento_assistido);
+                  const hoje = new Date();
+                  let idade = hoje.getFullYear() - dataNasc.getFullYear();
+                  if (hoje < new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate())) idade--;
+                  document.getElementById('campo_idade').value = idade + " Anos";
+              }
+          }
 
-      console.log("Dados do Assistido:", resDados);
-      console.log("Dados do Histórico:", resHist);
+          // Chamada 2: Histórico (Atendimentos anteriores)
+          const resHist = await fetch(`/api/historico/apometrico/${cpf}`).then(r => r.json());
+          console.log("LOG: Queixa recebida:", resHist.queixa_atual);
 
-      // Preenche os campos de texto
-      document.getElementById('campo_nome').value = resDados.nome || "";
-      document.getElementById('campo_idade').value = resDados.idade || "";
-      document.getElementById('campo_religiao').value = resDados.religiao || "";
+          // Inserir a queixa no campo de Observações
+          if (resHist.queixa_atual) {
+              const campoObs = document.querySelector('textarea[name="observacoes"]');
+              if (campoObs) {
+                  // Adiciona a queixa no início das observações
+                  campoObs.value = `QUEIXA DO DIA: ${resHist.queixa_atual}\n\n`;
+              }
+          }
 
-      // Renderiza a tabela usando a função definida no passo 2
-      // Note que usamos resHist.historico pois é assim que o seu Controller envia
-      renderizarTabelaApometria(resHist.historico || []);
+          renderizarTabela(resHist.historico || []);
+/*           const resHist = await fetch(`/api/historico/apometrico/${cpf}`).then(r => r.json());
+          console.log("LOG: Histórico recebido:", resHist);
 
-    } catch (err) {
-      console.error('Erro na requisição AJAX:', err);
-      container.innerHTML = '<p style="color:red;">Erro ao carregar dados do servidor.</p>';
-    }
+          // Renderiza os dados na tabela que criamos acima
+          renderizarTabela(resHist.historico || []);
+ */
+      } catch (err) {
+          console.error('Erro ao carregar dados:', err);
+      }
   });
 
   // 4. ENVIO DO FORMULÁRIO
-  document.getElementById('atendimentoForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    btn.disabled = true;
-    try {
-      const formData = new URLSearchParams(new FormData(e.target));
-      const resp = await fetch(e.target.action, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData
-      });
-      if (!resp.ok) throw new Error('Erro ao salvar');
-      await Swal.fire('Sucesso', 'Atendimento salvo!', 'success');
-      window.location.reload();
-    } catch (err) {
-      Swal.fire('Erro', err.message, 'error');
-      btn.disabled = false;
-    }
-  });
+  const formAtend = document.getElementById('atendimentoForm');
+  if (formAtend) {
+    formAtend.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      btn.disabled = true;
+      try {
+        const formData = new URLSearchParams(new FormData(e.target));
+        const resp = await fetch(e.target.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData
+        });
+        if (!resp.ok) throw new Error();
+        await Swal.fire('Sucesso', 'Atendimento finalizado com sucesso!', 'success');
+        window.location.reload();
+      } catch (err) {
+        Swal.fire('Erro', 'Falha ao salvar o atendimento.', 'error');
+        btn.disabled = false;
+      }
+    });
+  }
 </script>
+
 <%- include('../partials/footer') %>

@@ -80,7 +80,7 @@
     try {
       // Busca Nome e Idade
       const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
-      document.getElementById('campo_nome').value = resDados.nome || "";
+      document.getElementById('campo_nome').value = resDados.nome_assistido || "";
 
       // Busca Histórico
       const resHist = await fetch(`/api/historico/homeopatico/${cpf}`).then(r => r.json());

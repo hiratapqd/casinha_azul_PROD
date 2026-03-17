@@ -117,25 +117,49 @@
 
 <script>
     // Lógica para buscar histórico ao digitar o CPF
-    document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
-        const cpf = e.target.value;
-        if (cpf.length >= 11) {
-            const resp = await fetch(`/atendimento/historico/${cpf}`);
-            const historico = await resp.json();
-            
-            const container = document.getElementById('historico-container');
-            const tbody = document.querySelector('#tabela-historico tbody');
-            tbody.innerHTML = '';
+document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
+    const cpf = e.target.value.replace(/\D/g, ''); // Remove pontos/traços
+    if (cpf.length >= 11) {
+        // 1. BUSCA O HISTÓRICO (Já estava funcionando)
+        const respHist = await fetch(`/atendimento/historico/${cpf}`);
+        const historico = await respHist.json();
+        
+        const container = document.getElementById('historico-container');
+        const tbody = document.querySelector('#tabela-historico tbody');
+        tbody.innerHTML = '';
+        if (historico.length > 0) {
+            container.style.display = 'block';
+            historico.forEach(h => {
+                const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
+                tbody.innerHTML += `<tr><td>${data}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
+            });
+        }
 
-            if (historico.length > 0) {
-                container.style.display = 'block';
-                historico.forEach(h => {
-                    const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
-                    tbody.innerHTML += `<tr><td>${data}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
-                });
+        // 2. BUSCA DADOS DO ASSISTIDO (Para preencher os campos)
+        const respDados = await fetch(`/api/dados-assistido/${cpf}`);
+        if (respDados.ok) {
+            const assistido = await respDados.json();
+            console.log("Dados recebidos:", assistido); // Para você conferir no F12
+
+            if (assistido) {
+                // CORREÇÃO DOS NOMES DOS CAMPOS (Adicionando _assistido)
+                document.getElementById('nome').value = assistido.nome_assistido || '';
+                document.getElementById('sexo').value = assistido.sexo_assistido || '';
+                document.getElementById('religiao').value = assistido.religiao_assistido || '';
+                document.getElementById('cidade').value = assistido.cidade_assistido || '';
+                document.getElementById('uf').value = assistido.uf_assistido || '';
+                document.getElementById('email').value = assistido.email_assistido || '';
+                document.getElementById('telefone').value = assistido.telefone_assistido || '';
+                
+                if (assistido.data_nascimento_assistido) {
+                    // Formata a data para o input date (YYYY-MM-DD)
+                    const dataIso = new Date(assistido.data_nascimento_assistido).toISOString().split('T')[0];
+                    document.getElementById('data_nascimento').value = dataIso;
+                }
             }
         }
-    });
+    }
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

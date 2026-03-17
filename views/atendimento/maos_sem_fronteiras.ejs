@@ -80,7 +80,7 @@
     try {
       // Busca Nome
       const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
-      document.getElementById('campo_nome').value = resDados.nome || "";
+      document.getElementById('campo_nome').value = resDados.nome_assistido || "";
 
       // Busca Histórico (usando o tipo maos_sem_fronteiras)
       const resHist = await fetch(`/api/historico/maos_sem_fronteiras/${cpf}`).then(r => r.json());
