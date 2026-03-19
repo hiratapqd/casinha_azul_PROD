@@ -1,6 +1,3 @@
-/* styles.css */
-
-/* Reset básico */
 * {
     margin: 0;
     padding: 0;
@@ -9,13 +6,10 @@
 }
 
 body {
-    background-color: #f9f9f9; /* Fundo leve para dar contraste */
-}
+    background-color: #f9f9f9;}
 
-/* Estilização do Header e Menu com Fundo Azul */
 header {
-    background-color: #1277bb; /* O azul turquesa do site original */
-    border-bottom: 3px solid #0693e3; /* Uma sombra azul um pouco mais escura para dividir */
+    background-color: #1277bb;    border-bottom: 3px solid #0693e3; 
     padding: 0 20px;
 }
 
@@ -44,13 +38,13 @@ nav {
     transition: all 0.3s ease;
 }
 
-/* Efeito de Hover (Quando passa o mouse) */
+
 .menu a:hover {
     background-color: rgba(255, 255, 255, 0.2); /* Fundo branco semi-transparente */
     color: #ffffff;
 }
 
-/* Estilização do Submenu (Dropdown) */
+
 .dropdown-content {
     display: none;
     position: absolute;
@@ -75,12 +69,12 @@ nav {
     color: #00c1cf; /* Texto azul no hover dentro do submenu */
 }
 
-/* Mostrar o submenu ao passar o mouse */
+
 .dropdown:hover .dropdown-content {
     display: block;
 }
 
-/* Seta indicadora branca */
+
 .dropdown > a::after {
     content: ' ▼';
     font-size: 10px;
@@ -88,7 +82,7 @@ nav {
     color: #fff;
 }
 
-/* Seção de Conteúdo */
+
 .hero {
     text-align: center;
     padding: 100px 20px;
@@ -104,19 +98,16 @@ nav {
     font-size: 1.5rem;
     margin-bottom: 10px;
 }
-/* Configuração para alinhar campos lado a lado */
+
 .form-row {
     display: flex;
-    gap: 20px; /* Espaço entre os campos */
-    margin-bottom: 15px;
+    gap: 20px;     margin-bottom: 15px;
 }
 
 .form-row .form-group {
-    flex: 1; /* Faz os campos dividirem o espaço igualmente */
-    margin-bottom: 0; /* Remove a margem inferior para não desalinharem */
-}
+    flex: 1;     margin-bottom: 0; }
 
-/* Ajustes específicos para campos menores ou maiores */
+
 .flex-2 {
     flex: 2 !important;
 }
@@ -125,16 +116,16 @@ nav {
     flex: 3 !important;
 }
 
-/* Garante que em telas de celular os campos fiquem um embaixo do outro */
+
 @media (max-width: 600px) {
     .form-row {
         flex-direction: column;
         gap: 10px;
     }
 }
-/* Centraliza o cabeçalho da seção de disponibilidade */
+
 .disponibilidade-secao {
-    text-align: center; /* Centraliza o título e o parágrafo */
+    text-align: center; 
     margin-top: 30px;
     padding: 20px;
     background: #fdfdfd;
@@ -142,19 +133,19 @@ nav {
     border: 1px solid #eee;
 }
 
-/* Container da grade para centralizar o conteúdo interno */
+
 .grade-container {
-    display: inline-block; /* Faz o container ter apenas a largura necessária */
-    text-align: left;      /* Mantém o texto das modalidades alinhado à esquerda internamente */
+    display: inline-block; 
+    text-align: left;     
     margin-top: 20px;
     width: 100%;
-    max-width: 800px;      /* Limita a largura para não espalhar demais em telas grandes */
+    max-width: 800px;
 }
 
-/* Ajuste das linhas para centralização */
+
 .linha-modalidade {
     display: flex;
-    justify-content: center; /* Centraliza os itens na linha */
+    justify-content: center;
     align-items: center;
     padding: 10px 0;
     border-bottom: 1px solid #f0f0f0;
@@ -166,16 +157,16 @@ nav {
     margin-left: 10px;
     height: 90px;
 }
-/* Espaço fixo para o nome da modalidade para alinhar as colunas de dias */
+
 .label-modalidade {
     width: 150px; 
     font-weight: bold;
     color: #2c3e50;
-    text-align: right;    /* Alinha o nome da modalidade em direção aos checks */
+    text-align: right;    
     margin-right: 20px;
 }
 
-/* Grupo de checkboxes */
+
 .checkbox-group {
     display: flex;
     gap: 10px;
@@ -201,7 +192,7 @@ nav {
 .alerta { border-top-color: #ffc107; }
 
 
-    /* Ajustes específicos para o Dashboard e Listas */
+
     .dashboard {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -219,7 +210,7 @@ nav {
 
     .card.alerta { border-left: 5px solid #ff4d4d; }
 
-    /* Estilo da Lista de Voluntários */
+
     .lista-grupos {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -250,7 +241,7 @@ nav {
         border-bottom: 1px dashed #eee;
     }
 
-    /* Media Query para garantir que tudo empilhe perfeitamente no celular */
+
     @media (max-width: 600px) {
         .hero { padding: 10px; }
         .dashboard { grid-template-columns: 1fr; }
@@ -273,7 +264,7 @@ nav {
 
     .big-number { font-size: 2.5rem; font-weight: bold; color: #007bff; margin: 10px 0; }
 
-    /* Estilo para a contagem por tipo dentro do card */
+
     .stats-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -293,7 +284,7 @@ nav {
     .stat-item .label { color: #666; font-weight: 500; }
     .stat-item .value { font-weight: bold; color: #333; }
 
-    /* Estilo da Escala */
+   
     .escala-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -317,7 +308,7 @@ nav {
         .stats-grid { grid-template-columns: 1fr; }
     }
 
-    /* Estilos para a Tabela de Fila */
+
 table {
     width: 90%;
     margin: 30px auto;
@@ -349,32 +340,63 @@ th {
     color: white;
 }
 
-.btn-atender {
+.btn-atender, .btn-confirmar {
     text-decoration: none;
     background: #1277bb;
     color: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+    padding: 10px 20px; 
+    border-radius: 8px;   
+    font-size: 0.95rem;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.1s ease; 
+
+    box-shadow: 0 5px 0 #0d5a8f; 
 }
 
-.btn-atender:hover {
-    background: #0d5a8f;
+.btn-atender:hover, .btn-confirmar:hover {
+    background: #1585d1;
+    transform: translateY(-2px); 
+    box-shadow: 0 7px 0 #0d5a8f; 
 }
+
+.btn-atender:active, .btn-confirmar:active {
+    background: #0d5a8f;
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #0d5a8f; 
+}
+
+.btn-success.btn-atender {
+    background-color: #28a745;
+    box-shadow: 0 5px 0 #1e7e34;
+}
+.btn-success.btn-atender:hover {
+    background-color: #218838;
+    box-shadow: 0 7px 0 #1e7e34;
+}
+.btn-success.btn-atender:active {
+    box-shadow: 0 1px 0 #1e7e34;
+    box-shadow: 0 1px 0 #1e7e34
+}
+
 textarea {
     width: 100%; 
-    min-height: 150px; /* Altura mínima (mais alta) */
+    min-height: 150px; 
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1rem;
-    resize: vertical; /* Permite que o usuário aumente a altura, mas não a largura */
+    resize: vertical; 
 }
 
-/* Se quiser uma caixa ainda maior para observações específicas */
+
 .campo-grande {
-    min-height: 250px; /* Bem mais alta */
-}
+    min-height: 250px; }
 .badge-tratamento {
         padding: 4px 12px;
         border-radius: 20px;
@@ -400,17 +422,46 @@ input[type="text"] {
     border: 1px solid #d1d9e0;
     text-transform: uppercase;
 }
-/* Remove as bolinhas de qualquer lista dentro do nav ou dropdown */
 nav ul, 
 .dropdown-content, 
 .dropdown-menu {
-    list-style: none; /* Aqui é onde a mágica acontece */
-    padding: 0;
+    list-style: none;     padding: 0;
     margin: 0;
 }
 
-/* Garante que os itens da lista não tenham marcadores */
 nav li, 
 .dropdown-content li {
     list-style-type: none;
+}
+.btn-atendendo {
+    background-color: #bb9312; 
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: not-allowed; 
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn-finalizado {
+    background-color: #1277bb; /* Cinza */
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: not-allowed;
+    display: inline-block;
+    text-align: center;
+}
+
+/* Opcional: Ajuste para a nova coluna Status que você adicionou anteriormente */
+.badge-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    background-color: #eee;
 }
