@@ -100,21 +100,38 @@ exports.getApometriaInativos = async (req, res) => {
         // Marcos temporais
         const data30 = new Date();
         data30.setDate(hoje.getDate() - 30);
+        data30.setHours(23, 59, 59, 999);
         
         const data60 = new Date();
         data60.setDate(hoje.getDate() - 60);
+        data60.setHours(23, 59, 59, 999);
         
         const data90 = new Date();
         data90.setDate(hoje.getDate() - 90);
+        data90.setHours(23, 59, 59, 999);
+
 
         // 1. Agregação para pegar o último atendimento de apometria de cada pessoa
-        const ultimosAtendimentos = await Atendimento.aggregate([
+/*         const ultimosAtendimentos = await Atendimento.aggregate([
             { $match: { tipo: 'apometrico' } },
             { $sort: { data: -1 } },
             { $group: {
                 _id: "$cpf_assistido",
                 ultimaData: { $first: "$data" },
                 nome: { $first: "$nome_assistido" }
+            }}
+        ]); */
+        const ultimosAtendimentos = await Atendimento.aggregate([
+            { $sort: { data: -1 } },
+            { $group: {
+                _id: "$cpf_assistido",
+                nome: { $first: "$nome_assistido" },
+                ultimaData: { $first: "$data" },
+                ultimoTipo: { $first: "$tipo" }
+            }},
+            { $match: { 
+                ultimoTipo: "apometria", // Regra: o último foi apometria
+                ultimaData: { $lte: data30 } // E faz mais de 30 dias
             }}
         ]);
 
