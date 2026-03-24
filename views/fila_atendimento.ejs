@@ -7,6 +7,7 @@
             <tr>
                 <th>Nome</th>
                 <th>Sendo Atendido pela</th>
+                <th>Terapia</th>
                 <th>Status</th>
                 <th>Hora</th>
                 <th>Ações</th>
@@ -18,6 +19,9 @@
                     <tr>
                         <td><%= item.nome_assistido %></td>
                         <td><%= item.sendo_atendido %></td>
+                        <td style="text-transform: capitalize;">
+                                            <%= item.tipo %>
+                        </td>
                         <td>
                             <span class="status-badge <%= item.status === 'Em Atendimento' ? 'atendimento' : '' %>">
                                 <%= item.status %>
@@ -25,8 +29,17 @@
                         </td>
                         <td><%= item.data_pedido.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) %></td>
                         <td>
-                            <% if (item.status === 'Confirmado') { %>
+                                <% if (item.status === 'Confirmado' || item.status === 'Espera') { %>
                                 <a href="/atendimento/iniciar/<%= item._id %>" class="btn-atender">Atender</a>
+                                
+                                <% if (item.status === 'Espera') { %>
+                                    <a href="/atendimento/cancelar/<%= item._id %>" 
+                                    class="btn-atender" 
+                                    style="background-color: #dc3545; margin-left: 5px;"
+                                    onclick="return confirm('Deseja realmente cancelar esta solicitação?')">
+                                    Cancelar
+                                    </a>
+                                <% } %>
                             <% } %>
                         </td>
                     </tr>

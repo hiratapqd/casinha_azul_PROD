@@ -49,6 +49,7 @@ router.get('/atendimento/maos_sem_fronteiras', (req, res) => res.render('atendim
 router.get('/atendimento/homeopatico', (req, res) => res.render('atendimento/homeopatico'));
 router.get('/atendimento/passe', (req, res) => res.render('atendimento/passe'));
 router.get('/atendimento/historico/:cpf', solicitacaoController.buscarHistorico);
+router.get('/atendimento/cancelar/:id', solicitacaoController.cancelarSolicitacao);
 
 // ROTAS DE RELATÓRIOS
 router.get('/relatorios/atendimentos-hoje', relatorioController.getAtendimentosHoje);
