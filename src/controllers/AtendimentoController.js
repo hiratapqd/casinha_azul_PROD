@@ -1,7 +1,7 @@
 const Atendimento = require('../models/Atendimento');
 const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
-const ConfiguracaoFluxo = require('../models/ConfiguracaoFluxo'); // Verifique se o caminho está correto
+const ConfiguracaoFluxo = require('../models/ConfiguracaoFluxo'); 
 
 exports.getDadosIniciais = async (req, res) => {
     try {
@@ -28,7 +28,7 @@ exports.salvarAtendimento = async (req, res) => {
     try {
         const dados = req.body;
         const hoje = new Date().toISOString().split('T')[0];
-        const idSolicitacaoAtual = `${dados.cpf_assistido}_${hoje}`;
+        const idSolicitacaoAtual = dados.idSolicitacao || `${dados.cpf_assistido}_${hoje}`;
 
         // 1. Grava o histórico do atendimento atual
         const novoAtendimento = new Atendimento({
@@ -45,25 +45,25 @@ exports.salvarAtendimento = async (req, res) => {
         await Solicitacao.findByIdAndUpdate(idSolicitacaoAtual, { status: 'Atendido' });
 
         // 3. Lógica de Fluxo Dinâmica (Passe automático)
-        const regra = await ConfiguracaoFluxo.findOne({ terapia: dados.tipo }).lean();
+        const config = await ConfiguracaoFluxo.findOne({ terapia: dados.tipo });
 
-        if (regra && regra.geraPasseAoFinalizar === true) {
-            // ID Único para o passe: impede duplicidade no mesmo dia
-            const idFilaPasse = `${dados.cpf_assistido}_PASSE_${hoje}`;
-            
-            const jaExistePasse = await Solicitacao.findById(idFilaPasse);
+        if (config && config.geraPasseAoFinalizar) {
+            const dataLocal = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+            const idPasse = `${dados.cpf_assistido}_passe_${dataLocal}`;
 
-            if (!jaExistePasse) {
+            const jaTemPasse = await Solicitacao.findById(idPasse);
+
+            if (!jaTemPasse) {
                 const novaFilaPasse = new Solicitacao({
-                    _id: idFilaPasse,
-                    cpf_assistido: dados.cpf_assistido,
+                    _id: idPasse,
                     nome_assistido: dados.nome_assistido,
+                    tipo: "passe",
+                    status: "Confirmado",
                     data_pedido: new Date(),
-                    tipo_atendimento: 'passe',
-                    status: 'Aguardando',
-                    queixa_motivo: `Encaminhado após: ${dados.tipo}`
+                    sendo_atendido: `Vindo do(a) ${dados.tipo}`
                 });
                 await novaFilaPasse.save();
+                console.log(`[Fluxo] Passe gerado para ${dados.nome_assistido} vindo de ${dados.tipo}`);
             }
         }
 
@@ -73,19 +73,6 @@ exports.salvarAtendimento = async (req, res) => {
         res.status(500).json({ status: 'erro', mensagem: err.message });
     }
 };
-
-/* // Busca dados para preencher o topo da ficha (Nome, etc)
-exports.getDadosIniciais = async (req, res) => {
-    try {
-        const cpf = req.params.cpf;
-        const assistido = await Assistido.findById(cpf).lean() || await Assistido.findOne({ cpf_assistido: cpf }).lean();
-        
-        if (!assistido) return res.status(404).json(null);
-        res.json(assistido); 
-    } catch (err) {
-        res.status(500).json(null);
-    }
-}; */
 
 // Busca histórico específico para a tabela inferior
 exports.getHistoricoPorTipo = async (req, res) => {

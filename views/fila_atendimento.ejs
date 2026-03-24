@@ -29,7 +29,7 @@
                         </td>
                         <td><%= item.data_pedido.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) %></td>
                         <td>
-                                <% if (item.status === 'Confirmado' || item.status === 'Espera') { %>
+                                <% if (item.status === 'Confirmado' || item.status === 'Espera'|| item.status === 'Aguardando') { %>
                                 <a href="/atendimento/iniciar/<%= item._id %>" class="btn-atender">Atender</a>
                                 
                                 <% if (item.status === 'Espera') { %>
