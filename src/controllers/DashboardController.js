@@ -75,7 +75,7 @@ exports.getDashboard = async (req, res) => {
                 },
                 {
                     $group: {
-                        _id: "$tipo", // Certifique-se que o campo no banco é 'tipo'
+                        _id: "$tipo",
                         total: { $sum: 1 }
                     }
                 }
@@ -84,16 +84,23 @@ exports.getDashboard = async (req, res) => {
         ]);
 
         // Transformar o resultado da agregação em um objeto fácil de ler no EJS
-        const atendimentosHoje = {
+/*         const atendimentosHoje = {
             apometrico: 0,
             reiki: 0,
             auriculo: 0,
             passe: 0,
             maos: 0,
             homeopatia: 0
+        }; */
+        const atendimentosHoje = {
+            apometria: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'apometria' }),
+            reiki: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'reiki' }),
+            auriculo: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'auriculo' }),
+            maos: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'maos' }),
+            homeopatia: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'homeopatia' }),
+            passe: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'passe' })
         };
-
-        atendimentosPorTipoDB.forEach(item => {
+                atendimentosPorTipoDB.forEach(item => {
             if (atendimentosHoje.hasOwnProperty(item._id)) {
                 atendimentosHoje[item._id] = item.total;
             }
@@ -101,7 +108,7 @@ exports.getDashboard = async (req, res) => {
         // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
         // Passo A: CPFs com Apometria antiga (> 14 dias)
         const fizeramApometriaAntiga = await Atendimento.distinct("cpf_assistido", {
-            tipo: "apometrico", 
+            tipo: "apometria", 
             data: { $lt: limite14Dias }
         });
 
