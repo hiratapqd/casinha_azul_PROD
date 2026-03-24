@@ -1,0 +1,108 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+<main class="hero">
+    <h1>Cadastro de Assistido</h1>
+    <form action="/assistido/novo" method="POST" class="form-container">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" required>
+        </div>
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
+        </div>
+    <br>
+    </div><br>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="sexo">sexo:</label>
+            <input type="string" id="sexo" name="sexo">
+        </div><br>
+        <div class="form-group">
+            <label for="data_nascimento">Data de Nascimento:</label>
+            <input type="date" id="data_nascimento" name="data_nascimento">
+        </div><br>
+        <div class="form-group">
+            <label for="religiao">Religião:</label>
+            <input type="text" id="religiao" name="religiao">
+        </div><br>
+    </div><br>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="cidade">Cidade:</label>
+            <input type="text" id="cidade" name="cidade">
+        </div><br>
+        <div class="form-group">
+            <label for="uf">UF:</label>
+            <input type="text" id="uf" name="uf">
+        </div><br>
+    </div><br>
+    <div class="form-row">
+        <div class="form-group">
+            <label for="email">E-mail:</label>
+            <input type="email" id="email" name="email">
+        </div><br>
+        <div class="form-group">
+            <label for="telefone">Telefone/WhatsApp:</label>
+            <input type="tel" id="telefone" name="telefone">
+        </div><br>
+    </div><br>
+        <button type="submit" class="btn-atender btn-success">Finalizar Cadastro do assistido</button>
+    </form>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const formAssistido = document.querySelector('form');
+
+    formAssistido.addEventListener('submit', async (e) => {
+        e.preventDefault(); // Impede o recarregamento da página
+
+        const formData = new FormData(formAssistido);
+        const params = new URLSearchParams(formData);
+
+        try {
+            const resposta = await fetch('/assistido/novo', {
+                method: 'POST',
+                body: params
+            });
+
+            const resultado = await resposta.json();
+
+            if (resultado.status === 'existente') {
+                // Alerta informando que o CPF já está na base
+                Swal.fire({
+                    title: 'CPF já cadastrado!',
+                    html: `O assistido <b>${resultado.nome}</b> já possui cadastro na Casinha Azul.<br><br>Não é necessário cadastrar novamente.`,
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#007bff'
+                });
+            } else if (resultado.status === 'sucesso') {
+                // Alerta de sucesso total
+                Swal.fire({
+                    title: '✅ Sucesso!',
+                    text: 'Assistido cadastrado com sucesso.',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Novo Cadastro',
+                    cancelButtonText: 'Ir para o Início'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = '/';
+                    }
+                });
+            } else {
+                Swal.fire('Erro!', 'Ocorreu um erro ao salvar o assistido.', 'error');
+            }
+        } catch (error) {
+            Swal.fire('Erro!', 'Não foi possível conectar ao servidor.', 'error');
+        }
+    });
+</script>
+</main>
+<%- include('partials/footer') %>

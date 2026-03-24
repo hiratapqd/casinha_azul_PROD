@@ -1,0 +1,133 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+
+<main class="hero">
+    <h1>Check-in de Assistido</h1>
+    
+    <div class="form-container">
+        <div class="form-group">
+            <label>Digite o CPF do Assistido:</label>
+            <input type="text" id="busca_cpf" placeholder="000.000.000-00" autofocus>
+        </div>
+
+        <div id="area_registro" style="display: none; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 20px;">
+            <h3 id="nome_assistido_display" style="color: #2c3e50;"></h3>
+            <p id="info_extra" style="font-size: 0.9em; color: #666;"></p>
+
+            <form id="formCheckin">
+                <input type="hidden" name="cpf" id="hidden_cpf">
+                <input type="hidden" name="nome" id="hidden_nome">
+                <br><br>
+
+<!--                 <label><strong>Selecione as terapias para hoje:</strong></label>
+                <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
+                    <% configs.forEach(regra => { %>
+                    <% if(regra.terapia.toLowerCase() !== 'apometria') { %>
+                            <div style="padding: 10px; border: 1px solid #eee; border-radius: 5px;">
+                                <input type="checkbox" name="terapias" value="<%= regra.terapia %>" id="chk_<%= regra.terapia %>">
+                                <label for="chk_<%= regra.terapia %>" style="text-transform: capitalize;">
+                                    <%= regra.terapia.replace(/_/g, ' ') %>
+                                </label>
+                            </div>
+                        <% } %>
+                    <% }) %>
+                </div> -->
+                <label><strong>Selecione as terapias para hoje:</strong></label>
+                <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
+                    <% configs.forEach(regra => { %>
+                        <% 
+                        // 1. Pegamos o nome original do banco
+                        let valorOriginal = regra.terapia;
+                        
+                        // 2. Criamos uma versão padronizada para o "value" do checkbox
+                        // Removemos acentos e trocamos espaços por underscores
+                        let valorProcessado = valorOriginal
+                                .toLowerCase()
+                                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos (Mãos -> maos)
+                                .replace(/\s+/g, '_'); // Troca espaços por _
+
+                        // 3. Filtro para não mostrar a apometria na recepção
+                        if(valorProcessado !== 'apometria') { 
+                        %>
+                            <div style="padding: 10px; border: 1px solid #eee; border-radius: 5px;">
+                                <input type="checkbox" 
+                                    name="terapias" 
+                                    value="<%= valorProcessado %>" 
+                                    id="chk_<%= valorProcessado %>">
+                                <label for="chk_<%= valorProcessado %>" style="text-transform: capitalize;">
+                                    <%= valorOriginal %>
+                                </label>
+                            </div>
+                        <% } %>
+                    <% }) %>
+                </div>
+
+                <div class="form-group">
+                    <label>Queixa/Motivo da visita:</label>
+                    <textarea name="queixa" id="queixa_recepcao" rows="3" placeholder="O que o assistido relatou hoje?"></textarea>
+                </div>
+                <br><br>
+
+                <button type="submit" class="btn-atender btn-success" style="width: 40%; margin-top: 20px;">
+                Confirmar e Enviar para Fila
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const buscaCpf = document.getElementById('busca_cpf');
+    const areaRegistro = document.getElementById('area_registro');
+
+    // Busca automática ao digitar o CPF completo
+    buscaCpf.addEventListener('input', async (e) => {
+        const cpf = e.target.value.replace(/\D/g, '');
+        if (cpf.length === 11) {
+            try {
+                const res = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
+                if (res) {
+                    document.getElementById('nome_assistido_display').innerText = res.nome_assistido;
+                    document.getElementById('hidden_cpf').value = cpf;
+                    document.getElementById('hidden_nome').value = res.nome_assistido;
+                    document.getElementById('info_extra').innerText = `Religião: ${res.religiao_assistido || 'Não informada'}`;
+                    areaRegistro.style.display = 'block';
+                } else {
+                    Swal.fire('Não encontrado', 'Assistido não cadastrado. Deseja cadastrar?', 'question');
+                }
+            } catch (err) { console.error(err); }
+        }
+    });
+
+    // Envio das solicitações para a fila
+    document.getElementById('formCheckin').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+            cpf: formData.get('cpf'),
+            nome: formData.get('nome'),
+            queixa: formData.get('queixa'),
+            terapias: formData.getAll('terapias')
+        };
+
+        if (data.terapias.length === 0) {
+            return Swal.fire('Atenção', 'Selecione pelo menos uma terapia!', 'warning');
+        }
+
+        try {
+            const resp = await fetch('/api/recepcao/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (resp.ok) {
+                await Swal.fire('Sucesso', 'Assistido enviado para as filas!', 'success');
+                window.location.reload();
+            }
+        } catch (err) {
+            Swal.fire('Erro', 'Falha ao registrar check-in', 'error');
+        }
+    });
+</script>
