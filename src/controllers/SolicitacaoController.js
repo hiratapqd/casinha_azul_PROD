@@ -49,6 +49,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
             queixa_motivo: dados.queixa,
             posicao: posicaoFila,
             data_pedido: agora,
+            tipo:"apometrico",
             status: posicaoFila <= 30 ? 'Confirmado' : 'Espera'
         });
 

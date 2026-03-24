@@ -1,0 +1,63 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+
+<main class="container">
+    <div class="card">
+        <h1>Atendimento: <%= tituloPagina %></h1>
+        
+        <form action="/atendimento/salvar" method="POST" id="formAtendimento">
+            <input type="hidden" name="idSolicitacao" value="<%= typeof solicitacaoId !== 'undefined' ? solicitacaoId : '' %>">
+            <input type="hidden" name="tipo" value="<%= terapia %>">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CPF do Assistido:</label>
+                    <input type="text" name="cpf_assistido" id="cpf_busca" 
+                        value="<%= typeof dados !== 'undefined' ? dados.cpf_assistido : '' %>" 
+                        placeholder="Digite o CPF para buscar" required>
+                </div>
+               <div class="form-group">
+                    <label>Nome do Assistido:</label>
+                    <input type="text" name="nome_assistido" id="nome_assistido" 
+                        value="<%= typeof dados !== 'undefined' ? dados.nome_assistido : '' %>" 
+                        <%= typeof dados !== 'undefined' ? 'readonly' : '' %>>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Terapeuta:</label>
+                    <input type="text" name="voluntario" id="voluntario" placeholder="Digite seu nome" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Evolução do Atendimento:</label>
+                <textarea name="descricao_atendimento" rows="5" required></textarea>
+            </div>
+            <br><br>
+            <button type="submit" class="btn-success">Finalizar Atendimento</button>
+        </form>
+
+        <script>
+        // Script para busca automática de nome por CPF (Standalone)
+        document.getElementById('cpf_busca').addEventListener('blur', async (e) => {
+            const cpf = e.target.value.replace(/\D/g, '');
+            if (cpf.length === 11) {
+                try {
+                    const response = await fetch(`/api/dados-assistido/${cpf}`);
+                    if (response.ok) {
+                        const assistido = await response.json();
+                        document.getElementById('nome_assistido').value = assistido.nome_assistido;
+                    } else {
+                        alert("Assistido não encontrado. Verifique o CPF ou realize o cadastro.");
+                    }
+                } catch (err) {
+                    console.error("Erro na busca:", err);
+                }
+            }
+        });
+        </script>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>
