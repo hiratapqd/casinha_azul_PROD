@@ -1,15 +1,18 @@
 const Assistido = require('../models/Assistido');
 
 exports.criarAssistido = async (req, res) => {
+    
     try {
         // const { cpf, nome, telefone, email } = req.body;
         const dados = req.body;
-
+        // console.log("Dados recebidos no Controller:", dados);
         // 1. Verifica se o assistido já existe (usando o CPF como _id)
-        const cpfLimpo = dados.cpf ? dados.cpf.replace(/\D/g, '') : null;
+        const cpfLimpo = (dados.cpf_assistido || dados.cpf) ? (dados.cpf_assistido || dados.cpf).replace(/\D/g, '') : null;
+        // console.log("CPF Limpo gerado:", cpfLimpo);
         if (!cpfLimpo) {
             return res.status(400).json({ status: 'erro', mensagem: 'CPF é obrigatório' });
         }
+        // 2. Verifica se o assistido já existe
         const assistidoExistente = await Assistido.findById(cpfLimpo);
 
         if (assistidoExistente) {
@@ -19,22 +22,22 @@ exports.criarAssistido = async (req, res) => {
             });
         }
 
-        // 2. Prepara os dados conforme o seu esquema original
+        // 3. Prepara os dados conforme o seu esquema original
         const novoAssistido = new Assistido({
             _id: cpfLimpo,
-            nome_assistido: dados.nome,
-            telefone_assistido: dados.telefone,
-            data_nascimento_assistido: dados.data_nascimento,
-            sexo_assistido: dados.sexo,
-            religiao_assistido: dados.religiao,
-            cidade_assistido: dados.cidade,
-            uf_assistido: dados.uf,
-            email_assistido: dados.email,
+            nome_assistido: dados.nome_assistido,
+            telefone_assistido: dados.telefone_assistido,
+            data_nascimento_assistido: dados.data_nascimento_assistido,
+            sexo_assistido: dados.sexo_assistido,
+            religiao_assistido: dados.religiao_assistido,
+            cidade_assistido: dados.cidade_assistido,
+            uf_assistido: dados.uf_assistido,
+            email_assistido: dados.email_assistido,
             status: "Ativo",
-            data_cadastro: new Date().toISOString().split('T')[0]
+            dataCadastro: new Date().toISOString().split('T')[0]
         });
 
-        // 3. Salva no banco de dados casinha_azul
+        // 4. Salva no banco de dados casinha_azul
         await novoAssistido.save();
         
         res.json({ status: 'sucesso' });
