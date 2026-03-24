@@ -5,6 +5,7 @@
     
     <form action="/atendimento/salvar" method="POST" class="form-container" id="atendimentoForm">
         <input type="hidden" name="tipo" value="passe">
+        <input type="hidden" name="idSolicitacao" id="idSolicitacao">
         
         <div class="form-row">
             <div class="form-group">
@@ -30,87 +31,103 @@
         </div>
 
         <div class="form-group">
-            <label>Observações:</label>
-            <textarea name="observacoes" rows="4"></textarea>
-        </div><br><br>
+            <label>Evolução / Observações:</label>
+            <textarea name="observacoes" id="descricao_atendimento" rows="10"></textarea>
+        </div><br>
 
-        <button type="submit" class="btn-atender btn-success">Finalizar o Atendimento</button>
-    </form>
+        <button type="submit" class="btn-atender btn-success">Finalizar Passe</button>
+    </form><br><br>
 
-    <section class="historico-section" style="margin-top: 30px;">
-        <h2>Histórico de Passes</h2>
-        <div id="historicoContainer" style="background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
-            <p>Digite o CPF para carregar o histórico.</p>
-        </div>
-    </section>
+    <hr>
+    <h3>Histórico de Passes</h3>
+    <table class="table-historico">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Terapeuta</th>
+                <th>Observação</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+            <tr><td colspan="3">Aguardando CPF...</td></tr>
+        </tbody>
+    </table>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  // 1. Data automática
-  document.getElementById('campo_data').value = new Date().toISOString().split('T')[0];
+  const dataHoje = new Date().toISOString().split('T')[0];
+  document.getElementById('campo_data').value = dataHoje;
 
-  // 2. Função para desenhar a tabela
-  const renderizarTabela = (lista) => {
-    const container = document.getElementById('historicoContainer');
+  function renderizarTabela(lista) {
+    const corpo = document.getElementById('tabela-corpo');
     if (!lista || lista.length === 0) {
-      container.innerHTML = '<p>Nenhum histórico de Passe encontrado.</p>';
+      corpo.innerHTML = '<tr><td colspan="3">Nenhum histórico encontrado.</td></tr>';
       return;
     }
+    corpo.innerHTML = lista.map(item => `
+      <tr>
+        <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+        <td>${item.voluntario || '-'}</td>
+        <td>${item.observacoes || '-'}</td>
+      </tr>
+    `).join('');
+  }
 
-    let html = '<table style="width:100%; border-collapse: collapse; margin-top:10px;">';
-    html += '<tr style="background:#f4f4f4"><th style="padding:8px; border:1px solid #ddd;">Data</th><th style="padding:8px; border:1px solid #ddd;">Terapeuta</th><th style="padding:8px; border:1px solid #ddd;">Obs</th></tr>';
-    lista.forEach(item => {
-      const d = new Date(item.data).toLocaleDateString('pt-BR');
-      html += `<tr>
-        <td style="border:1px solid #ddd; padding:8px;">${d}</td>
-        <td style="border:1px solid #ddd; padding:8px;">${item.voluntario || ''}</td>
-        <td style="border:1px solid #ddd; padding:8px;">${item.observacoes || ''}</td>
-      </tr>`;
-    });
-    html += '</table>';
-    container.innerHTML = html;
-  };
-
-  // 3. Busca de Nome e Histórico
   document.getElementById('cpf_assistido').addEventListener('blur', async function() {
     const cpf = this.value.trim().replace(/\D/g, '');
     if (cpf.length < 11) return;
 
+    // CORREÇÃO CRUCIAL: O ID do passe na fila é gerado como CPF_passe_DATA
+    const tipoTerapia = "passe";
+    document.getElementById('idSolicitacao').value = `${cpf}_${tipoTerapia}_${dataHoje}`;
+
     try {
       // Busca Nome
       const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
-      document.getElementById('campo_nome').value = resDados.nome_assistido || "";
+      if(resDados) document.getElementById('campo_nome').value = resDados.nome_assistido || "";
 
-      // Busca Histórico (tipo passe)
+      // Busca Histórico e a queixa que veio do atendimento anterior (Reiki/Apometria/etc)
       const resHist = await fetch(`/api/historico/passe/${cpf}`).then(r => r.json());
+      
+      if (resHist.queixa_atual) {
+          const campoObs = document.getElementById('descricao_atendimento');
+          // No passe, a "queixa" geralmente é a observação do terapeuta anterior
+          const textoQueixa = `ENCAMINHAMENTO/QUEIXA:\n${resHist.queixa_atual}\n-----------------------------\n`;
+          
+          if (campoObs && campoObs.value.trim() === "") {
+              campoObs.value = textoQueixa;
+          }
+      }
+
       renderizarTabela(resHist.historico || []);
     } catch (err) {
       console.error('Erro na busca:', err);
     }
   });
 
-  // 4. Envio via AJAX
+  // Envio AJAX para garantir que o idSolicitacao seja enviado no corpo (body)
   document.getElementById('atendimentoForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const form = e.target;
-    const btn = form.querySelector('button');
+    const btn = e.target.querySelector('button');
     btn.disabled = true;
 
     try {
-      const body = new URLSearchParams(new FormData(form));
-      const resp = await fetch(form.action, {
+      const body = new URLSearchParams(new FormData(e.target));
+      const resp = await fetch(e.target.action, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body
+        body: body
       });
 
-      if (!resp.ok) throw new Error('Erro ao salvar no servidor');
-
-      await Swal.fire('Sucesso', 'Atendimento de Passe salvo!', 'success');
-      window.location.reload();
+      if (resp.ok) {
+        await Swal.fire('Sucesso', 'Passe finalizado!', 'success');
+        window.location.href = '/fila-atendimento';
+      } else {
+        throw new Error();
+      }
     } catch (err) {
-      Swal.fire('Erro', err.message, 'error');
+      Swal.fire('Erro', 'Falha ao salvar atendimento.', 'error');
       btn.disabled = false;
     }
   });

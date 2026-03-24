@@ -5,6 +5,7 @@
     
     <form action="/atendimento/reiki" method="POST" class="form-container" id="atendimentoForm">
         <input type="hidden" name="tipo" value="reiki">
+        <input type="hidden" name="idSolicitacao" id="idSolicitacao">
         
         <div class="form-row">
             <div class="form-group">
@@ -78,10 +79,18 @@
   }
 
   // Evento de busca por CPF
+  const dataHoje = new Date().toISOString().split('T')[0];
   document.getElementById('cpf_assistido').addEventListener('blur', async function() {
     const cpf = this.value.trim().replace(/\D/g, '');
+    
     if (cpf.length < 11) return;
+    const dataHoje = new Date().toISOString().split('T')[0];
+    const tipoTerapia = "reiki"; // Mude para 'auriculo' ou 'homeopatia' nos outros arquivos
 
+    // CORREÇÃO: Montando o ID conforme o padrão da recepção
+    document.getElementById('idSolicitacao').value = `${cpf}_${tipoTerapia}_${dataHoje}`;
+    
+    console.log("ID Gerado para busca/baixa:", document.getElementById('idSolicitacao').value);
     try {
       // 1. Busca dados do assistido (Nome)
       // CORRIGIDO: Rota exata que funciona na Apometria
