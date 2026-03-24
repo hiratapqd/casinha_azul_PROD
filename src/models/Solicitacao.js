@@ -7,7 +7,7 @@ const SolicitacaoSchema = new mongoose.Schema({
     sendo_atendido: String, 
     queixa_motivo: String,
     data_pedido: { type: Date, default: Date.now },
-    tipo: { type: String, default: 'apometrico' },
+    tipo: { type: String, default: 'apometria' },
     posicao: Number,
     status: { type: String, default: 'Confirmado' }
 }, { 

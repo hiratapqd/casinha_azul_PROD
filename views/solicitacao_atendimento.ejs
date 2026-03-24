@@ -97,7 +97,7 @@
             </select>
         </div><br><br>
 
-        <button type="submit" class="btn-atender btn-success" <%= typeof bloqueado !== 'undefined' && bloqueado ? 'disabled' : '' %>>
+        <button type="submit" id="btnRegistrar" class="btn-atender btn-success" <%= typeof bloqueado !== 'undefined' && bloqueado ? 'disabled' : '' %>>
             <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitação' %>
         </button>
     </form>
@@ -164,63 +164,50 @@ document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+
 <script>
-    const form = document.querySelector('form');
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formSolicitacao') || document.querySelector('form');
     
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault(); // Bloqueia o recarregamento da página 
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); // 🛑 Bloqueia o recarregamento da página
+            
+            console.log("Iniciando envio do formulário..."); // Teste de clique
 
-        const formData = new FormData(form);
-        const dados = Object.fromEntries(formData.entries());
+            const formData = new FormData(form);
+            const dados = Object.fromEntries(formData.entries());
 
-        try {
-            const resposta = await fetch('/atendimento/solicitacao', { // Rota sincronizada [cite: 39]
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-
-            const resultado = await resposta.json();
-
-            if (resultado.status === 'sucesso') {
-                Swal.fire({
-                    title: resultado.posicao <= resultado.limite ? '✅ Confirmado!' : '⏳ Lista de Espera',
-                    text: `Sua posição é ${resultado.posicao}/${resultado.limite}.`,
-                    icon: resultado.posicao <= resultado.limite ? 'success' : 'warning',
-                    confirmButtonText: 'Entendido',
-                    showCancelButton: true,
-                    cancelButtonText: 'Início'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.reload(); // [cite: 42]
-                    } else {
-                        window.location.href = '/'; // [cite: 43]
-                    }
+            try {
+                const response = await fetch('/atendimento/solicitacao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
                 });
-            } else if (resultado.status === 'duplicado') {
-                // ALERTA PARA SOLICITAÇÃO REPETIDA
-                Swal.fire({
-                    title: 'Solicitação já realizada!',
-                    text: resultado.mensagem,
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido'
-                });
-/*             } else if (resultado.status === 'nao_encontrado') {
-                Swal.fire({
-                    title: 'Assistido não encontrado',
-                    text: 'O CPF informado não possui cadastro. Deseja cadastrar agora?',
-                    icon: 'error',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ir para Cadastro'
-                }).then((result) => {
-                    if (result.isConfirmed) window.location.href = '/cadastro'; // [cite: 46]
-                }); */
+
+                const resultado = await response.json();
+                console.log("Resposta do servidor:", resultado);
+
+                if (resultado.status === 'sucesso') {
+                    Swal.fire({
+                        title: resultado.posicao <= resultado.limite ? '✅ Confirmado!' : '⏳ Lista de Espera',
+                        text: `Posição: ${resultado.posicao}`,
+                        icon: 'success'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Atenção', resultado.mensagem, 'warning');
+                }
+            } catch (error) {
+                console.error("Erro técnico:", error);
+                Swal.fire('Erro', 'Não foi possível falar com o servidor.', 'error');
             }
-        } catch (error) {
-            console.error('Erro:', error);
-            Swal.fire('Erro!', 'Falha ao conectar com o servidor.', 'error'); // [cite: 48]
-        }
-    });
+        });
+    } else {
+        console.error("Formulário não encontrado!");
+    }
+});
 </script>
 </main>
 <%- include('partials/footer') %>
