@@ -1,9 +1,9 @@
 // src/controllers/SolicitacaoController.js
 const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
+const LimiteAtendimento = require('../models/LimiteAtendimento');
 
-
-exports.criarSolicitacaoComCadastro = async (req, res) => {
+/* exports.criarSolicitacaoComCadastro = async (req, res) => {
     try {
         const dados = req.body;
         const agora = new Date();
@@ -63,8 +63,98 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
         console.error("Erro no Controller:", err);
         res.status(500).json({ status: 'erro', mensagem: err.message });
     }
-};
+}; */
 
+exports.criarSolicitacaoComCadastro = async (req, res) => {
+    try {
+        const dados = req.body;
+        const agora = new Date();
+        const dataLocal = agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+        const tipoAtual = "apometrico"; // Definido para este formulário 
+
+        // 1. BUSCAR LIMITES DINÂMICOS
+        // Se não encontrar no banco, usamos 3 como fallback (padrão de teste)
+        const configLimite = await LimiteAtendimento.findOne({ tipo: tipoAtual });
+        
+        // Mensagem no console para monitoramento [cite: 37]
+        if (configLimite) {
+            console.log(`Limite encontrado para ${tipoAtual}:`, configLimite); 
+        } else {
+            console.log(`Aviso: Limite para ${tipoAtual} não encontrado no banco. Usando padrões (3+4).`);
+        }
+        const limitePrincipal = configLimite ? configLimite.limite_principal : 3;
+        const limiteEspera = configLimite ? configLimite.limite_espera : 4; 
+        const limiteTotal = limitePrincipal + limiteEspera;
+
+        // 2. Cálculo da Idade [cite: 8]
+        const nasc = new Date(dados.data_nascimento);
+        let idade = agora.getFullYear() - nasc.getFullYear();
+        if (agora < new Date(agora.getFullYear(), nasc.getMonth(), nasc.getDate())) idade--;
+
+        // 3. Gravar/Atualizar Assistido [cite: 14, 15]
+        await Assistido.findByIdAndUpdate(
+            dados.cpf_assistido,
+            {
+                nome_assistido: dados.nome,
+                telefone_assistido: dados.telefone,
+                data_nascimento_assistido: dados.data_nascimento,
+                sexo_assistido: dados.sexo,
+                religiao_assistido: dados.religiao,
+                cidade_assistido: dados.cidade,
+                uf_assistido: dados.uf,
+                email_assistido: dados.email,
+                status: "Ativo"
+            },
+            { upsert: true, new: true }
+        );
+
+        // 4. Lógica de Fila baseada no Tipo 
+        const idSolicitacao = `${dados.cpf_assistido}_${dataLocal}`;
+        const hojeInicio = new Date(dataLocal + "T00:00:00-03:00");
+        
+        const contagem = await Solicitacao.countDocuments({ 
+            data_pedido: { $gte: hojeInicio },
+            tipo: tipoAtual 
+        });
+        
+        const posicaoFila = contagem + 1;
+
+        // VERIFICAÇÃO DE BLOQUEIO TOTAL
+        if (posicaoFila > limiteTotal) {
+            return res.json({ 
+                status: 'bloqueado', 
+                mensagem: `O limite de ${limiteTotal} vagas para ${tipoAtual} hoje foi atingido.` 
+            });
+        }
+
+        // 5. Gravar Solicitação com Status Dinâmico 
+        const novaSolicitacao = new Solicitacao({
+            _id: idSolicitacao,
+            nome_assistido: dados.nome,
+            idade_assistido: idade,
+            sendo_atendido: dados.atendimento_por,
+            queixa_motivo: dados.queixa,
+            posicao: posicaoFila,
+            data_pedido: agora,
+            tipo: tipoAtual,
+            status: posicaoFila <= limitePrincipal ? 'Confirmado' : 'Espera'
+        });
+
+        await novaSolicitacao.save();
+        
+        res.json({ 
+            status: 'sucesso', 
+            posicao: posicaoFila, 
+            limite: limitePrincipal 
+        });
+
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.json({ status: 'duplicado', mensagem: 'O assistido já possui uma solicitação hoje.' });
+        }
+        res.status(500).json({ status: 'erro', mensagem: err.message });
+    }
+};
 exports.buscarHistorico = async (req, res) => {
     try {
         const { cpf } = req.params;
