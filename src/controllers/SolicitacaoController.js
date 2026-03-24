@@ -3,68 +3,6 @@ const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
 const LimiteAtendimento = require('../models/LimiteAtendimento');
 
-/* exports.criarSolicitacaoComCadastro = async (req, res) => {
-    try {
-        const dados = req.body;
-        const agora = new Date();
-        const dataLocal = agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-
-        // 1. Cálculo da Idade
-        const nasc = new Date(dados.data_nascimento);
-        let idade = agora.getFullYear() - nasc.getFullYear();
-        if (agora < new Date(agora.getFullYear(), nasc.getMonth(), nasc.getDate())) idade--;
-
-        // 2. Gravar na Collection ASSISTIDOS (Cadastro Geral)
-        // Aqui ajustamos para os nomes de campos que você espera
-        await Assistido.findByIdAndUpdate(
-            dados.cpf_assistido, // cpf_assistido como _id
-            {
-                nome_assistido: dados.nome,
-                telefone_assistido: dados.telefone,
-                data_nascimento_assistido: dados.data_nascimento,
-                sexo_assistido: dados.sexo,
-                religiao_assistido: dados.religiao,
-                cidade_assistido: dados.cidade,
-                uf_assistido: dados.uf,
-                email_assistido: dados.email,
-                status: "Ativo" // Adicionado o campo status conforme solicitado
-            },
-            { upsert: true, new: true }
-        );
-
-        // 3. Gerar ID Único para SOLICITAÇÕES (CPF + DATA)
-        const idSolicitacao = `${dados.cpf_assistido}_${dataLocal}`;
-
-        // 4. Lógica de Fila
-        const hojeInicio = new Date(dataLocal + "T00:00:00-03:00");
-        const contagem = await Solicitacao.countDocuments({ data_pedido: { $gte: hojeInicio } });
-        const posicaoFila = contagem + 1;
-
-        // 5. Gravar na Collection SOLICITACOES
-        const novaSolicitacao = new Solicitacao({
-            _id: idSolicitacao,
-            nome_assistido: dados.nome,
-            idade_assistido: idade,
-            sendo_atendido: dados.atendimento_por,
-            queixa_motivo: dados.queixa,
-            posicao: posicaoFila,
-            data_pedido: agora,
-            tipo:"apometrico",
-            status: posicaoFila <= 30 ? 'Confirmado' : 'Espera'
-        });
-
-        await novaSolicitacao.save();
-        res.json({ status: 'sucesso', posicao: posicaoFila, limite: 30 });
-
-    } catch (err) {
-        if (err.code === 11000) {
-            return res.json({ status: 'duplicado', mensagem: 'O assistido já possui uma solicitação hoje.' });
-        }
-        console.error("Erro no Controller:", err);
-        res.status(500).json({ status: 'erro', mensagem: err.message });
-    }
-}; */
-
 exports.criarSolicitacaoComCadastro = async (req, res) => {
     try {
         const dados = req.body;
@@ -201,5 +139,23 @@ exports.iniciarAtendimento = async (req, res) => {
     } catch (err) {
         console.error("Erro ao iniciar atendimento:", err);
         res.status(500).send("Erro ao atualizar status.");
+    }
+};
+
+exports.cancelarSolicitacao = async (req, res) => {
+    try {
+        const { id } = req.params; // Recebe o ID (CPF_DATA) [cite: 55]
+        
+        // Atualiza o status para 'Cancelado' na collection 'solicitacoes' [cite: 52]
+        await Solicitacao.findOneAndUpdate(
+            { _id: id }, 
+            { status: 'Cancelado' }
+        );
+        
+        // Redireciona de volta para a fila atualizada [cite: 56]
+        res.redirect('/fila-atendimento');
+    } catch (err) {
+        console.error("Erro ao cancelar solicitação:", err);
+        res.status(500).send("Erro ao processar o cancelamento.");
     }
 };
