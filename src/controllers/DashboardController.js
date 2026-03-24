@@ -66,7 +66,38 @@ exports.getDashboard = async (req, res) => {
             Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim } }),
             Voluntario.find({ esta_ativo: { $ne: "Não" } }).lean()
         ]);
+        const [atendimentosPorTipoDB] = await Promise.all([
+            Atendimento.aggregate([
+                {
+                    $match: {
+                        data: { $gte: hojeInicio, $lte: hojeFim }
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$tipo", // Certifique-se que o campo no banco é 'tipo'
+                        total: { $sum: 1 }
+                    }
+                }
+            ]),
+            Voluntario.find({ esta_ativo: { $ne: "Não" } }).lean()
+        ]);
 
+        // Transformar o resultado da agregação em um objeto fácil de ler no EJS
+        const atendimentosHoje = {
+            apometrico: 0,
+            reiki: 0,
+            auriculo: 0,
+            passe: 0,
+            maos: 0,
+            homeopatia: 0
+        };
+
+        atendimentosPorTipoDB.forEach(item => {
+            if (atendimentosHoje.hasOwnProperty(item._id)) {
+                atendimentosHoje[item._id] = item.total;
+            }
+        });
         // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
         // Passo A: CPFs com Apometria antiga (> 14 dias)
         const fizeramApometriaAntiga = await Atendimento.distinct("cpf_assistido", {
@@ -109,6 +140,7 @@ exports.getDashboard = async (req, res) => {
                 hoje: totalAtendimentosHoje,
                 taxaAbandono: taxaAbandono, 
                 apometriaUnica: abandonosReais.length, 
+                detalheAtendimentos: atendimentosHoje,
                 voluntariosPorTipo,
                 totalVoluntarios: voluntariosDB.length
             },

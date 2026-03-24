@@ -16,11 +16,39 @@
             </div>
         </div>
 
-        <div class="card">
+<!--         <div class="card">
             <h3>Atendimentos Hoje</h3>
             <p class="big-number"><%= resumo.hoje %></p>
+        </div> -->
+    <div class="card card-detalhado">
+        <h3>Atendimentos Hoje</h3>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="label">Apometria:</span>
+                <span class="value"><%= resumo.detalheAtendimentos.apometrico %></span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Reiki:</span>
+                <span class="value"><%= resumo.detalheAtendimentos.reiki %></span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Aurículo:</span>
+                <span class="value"><%= resumo.detalheAtendimentos.auriculo %></span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Passe:</span>
+                <span class="value"><%= resumo.detalheAtendimentos.passe %></span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Mãos sem Fronteiras:</span>
+                <span class="value"><%= resumo.detalheAtendimentos.maos %></span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Homeopatia:</span>
+                <span class="value"><%= resumo.detalheAtendimentos.homeopatia %></span>
+            </div>
         </div>
-
+    </div>
         <div class="card alerta">
             <h3>Taxa de Abandono</h3>
             <p class="big-number"><%= resumo.taxaAbandono %>%</p>
