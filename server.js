@@ -59,6 +59,6 @@ app.use('/', indexRoutes);
 // --- 5. INICIALIZAÇÃO ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor voando baixo em http://localhost:${PORT}`);
+    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
     console.log(`📡 Ambiente: ${process.env.NODE_ENV || 'production'}`);
 });

@@ -21,7 +21,7 @@ router.get('/api/dados-assistido/:cpf', atendimentoController.getDadosIniciais);
 //router.get('/api/dados-assistido/:cpf', atendimentoController.getDadosIniciais);
 
 // --- ROTAS DE CADASTRO (VIEW) ---
-// router.get('/cadastro', assistidoController.renderFormCadastro); // GET para ver o form
+router.get('/cadastro', assistidoController.renderFormCadastro);
 router.get('/fila-atendimento', solicitacaoController.getFilaHoje);
 router.post('/assistido/novo', assistidoController.criarAssistido); 
 router.get('/atendimento/iniciar/:id', solicitacaoController.iniciarAtendimento);
