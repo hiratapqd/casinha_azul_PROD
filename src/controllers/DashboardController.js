@@ -87,7 +87,7 @@ exports.getDashboard = async (req, res) => {
             apometria: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'apometria' }),
             reiki: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'reiki' }),
             auriculo: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'auriculo' }),
-            maos: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'maos' }),
+            maos: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'maos_sem_fronteiras' }),
             homeopatia: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'homeopatia' }),
             passe: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'passe' })
         };
