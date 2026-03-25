@@ -26,7 +26,7 @@ exports.getAtendimentosHoje = async (req, res) => {
             auriculo: 0,
             passe: 0,
             maos_sem_fronteiras: 0,
-            homeopatico: 0
+            homeopatia: 0
         };
 
         // 4. Contagem com normalização de texto
@@ -47,7 +47,7 @@ exports.getAtendimentosHoje = async (req, res) => {
             { slug: 'auriculo', nome: 'Aurículo' },
             { slug: 'passe', nome: 'Passe' },
             { slug: 'maos_sem_fronteiras', nome: 'Mãos sem Fronteiras' },
-            { slug: 'homeopatico', nome: 'Homeopático' }
+            { slug: 'homeopatia', nome: 'Homeopatia' }
         ];
 
         res.render('relatorios/atendimentos_hoje', { 
