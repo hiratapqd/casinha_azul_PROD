@@ -10,6 +10,7 @@ const relatorioController = require('../controllers/RelatorioController');
 const livrariaController = require('../controllers/LivrariaController');
 const RecepcaoController = require('../controllers/RecepcaoController');
 const ConfiguracaoFluxo = require('../models/ConfiguracaoFluxo');
+const Atendimento = require('../models/Atendimento');
 
 // --- ROTA PRINCIPAL (DASHBOARD) ---
 router.get('/', dashboardController.getDashboard);
@@ -32,6 +33,7 @@ router.post('/atendimento/reiki', atendimentoController.salvarAtendimento);
 router.get('/cadastro_mediuns', (req, res) => res.render('cadastro_mediuns'));
 router.post('/medium/novo', voluntarioController.criarVoluntario);
 router.get('/visualizar_voluntarios', voluntarioController.getVisualizarVoluntarios);
+router.get('/relatorios/relatorio-voluntarios', relatorioController.getRelatorioVoluntarios);
 
 // --- ROTAS DE ATENDIMENTO ---
 router.get('/solicitacao_atendimento', (req, res) => res.render('solicitacao_atendimento'));

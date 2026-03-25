@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+<main class="hero">
+    <h1>Relatório de Voluntários Ativos</h1>
+    <p>Lista de terapeutas que já realizaram atendimentos no sistema.</p>
+
+    <div class="form-container">
+        <table class="table-atendimentos">
+            <thead>
+                <tr>
+                    <th>Nome do Voluntário</th> <th>Total de Atendimentos</th> <th>Última Participação</th> </tr>
+            </thead>
+            <tbody>
+                <% if (voluntarios && voluntarios.length > 0) { %>
+                    <% voluntarios.forEach(v => { %>
+                        <tr>
+                            <td><strong><%= v._id || 'Não informado' %></strong></td> 
+                            
+                            <td><%= v.totalAtendimentos %></td> 
+                            
+                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="3">Nenhum voluntário encontrado no histórico.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</main>
+<%- include('../partials/footer') %>

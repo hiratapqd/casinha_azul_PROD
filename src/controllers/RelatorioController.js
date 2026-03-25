@@ -101,6 +101,29 @@ exports.getRelatorioGeralAssistidos = async (req, res) => {
     }
 };
 
+exports.getRelatorioVoluntarios = async (req, res) => {
+    try {
+        const listaVoluntarios = await Atendimento.aggregate([
+            {
+                $group: {
+                    _id: "$voluntario", 
+                    totalAtendimentos: { $sum: 1 }, 
+                    ultimaParticipacao: { $max: "$data" } 
+                }
+            },
+            { $sort: { totalAtendimentos: -1 } } 
+        ]);
+
+       
+        res.render('relatorios/relatorio_voluntarios', { 
+            voluntarios: listaVoluntarios,
+            titulo: "Ranking de Voluntários" 
+        });
+    } catch (err) {
+        console.error("Erro no relatório de voluntários:", err);
+        res.status(500).send("Erro ao processar relatório.");
+    }
+};
 exports.getApometriaInativos = async (req, res) => {
     try {
         const hoje = new Date();
