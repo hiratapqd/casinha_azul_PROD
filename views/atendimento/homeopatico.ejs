@@ -88,7 +88,7 @@
       if(resDados) document.getElementById('campo_nome').value = resDados.nome_assistido || "";
 
       // 2. Histórico e Queixa
-      const resHist = await fetch(`/api/historico/homeopatico/${cpf}`).then(r => r.json());
+      const resHist = await fetch(`/api/historico/homeopatia/${cpf}`).then(r => r.json());
       
       if (resHist.queixa_atual) {
           const campoObs = document.getElementById('descricao_atendimento');
