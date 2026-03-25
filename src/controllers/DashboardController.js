@@ -97,26 +97,7 @@ exports.getDashboard = async (req, res) => {
             }
         });
         // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
-/*         // Passo A: CPFs com Apometria antiga (> 14 dias)
-        const fizeramApometriaAntiga = await Atendimento.distinct("cpf_assistido", {
-            tipo: "apometria", 
-            data: { $lt: limite14Dias }
-        });
 
-        // Passo B: CPFs com QUALQUER outro tratamento (diferente de Apometria)
-        const fizeramOutros = await Atendimento.distinct("cpf_assistido", {
-            tipo: { $ne: "apometria" } 
-        });
-
-        const setOutros = new Set(fizeramOutros.map(cpf => String(cpf)));
-
-        // Passo C: Abandono = Fez apometria antiga mas nunca apareceu em outros
-        const abandonosReais = fizeramApometriaAntiga.filter(cpf => !setOutros.has(String(cpf)));
-        
-        const assistidosUnicos = await Atendimento.distinct("cpf_assistido");
-        const taxaAbandono = assistidosUnicos.length > 0 
-            ? ((abandonosReais.length / assistidosUnicos.length) * 100).toFixed(1) 
-            : 0; */
         // 2.1. Pegar todos os CPFs únicos que já fizeram Apometria em qualquer tempo
         const todosQueFizeramApometria = await Atendimento.distinct("cpf_assistido", { tipo: "apometria" });
 

@@ -136,13 +136,20 @@ exports.getApometriaInativos = async (req, res) => {
 
         for (const registro of ultimosAtendimentos) {
             const dataAtendimento = new Date(registro.ultimaData);
-            
+            const cpfParaBusca = registro._id;
+            console.log({ cpfParaBusca });
+            const dadosCadastrais = await Assistido.findById(cpfParaBusca).lean();
+            if (!dadosCadastrais) {
+                console.log(`⚠️ Atenção: CPF ${cpfParaBusca} não encontrado na collection Assistidos!`);
+            } else {
+                console.log(`✅ Cadastro encontrado para: ${dadosCadastrais.nome_assistido}`);
+            }
             const item = {
-                cpf: registro._id,
+                cpf: cpfParaBusca,
                 nome: registro.nome,
                 ultimaData: registro.ultimaData,
-                telefone: "", 
-                email: ""
+                telefone: dadosCadastrais ? (dadosCadastrais.telefone_assistido || ""): "Não cadastrado",
+                email: dadosCadastrais ? (dadosCadastrais.email_assistido || ""): "Não cadastrado"
             };
 
             if (dataAtendimento < data90) {
