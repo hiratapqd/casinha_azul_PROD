@@ -19,19 +19,6 @@
                 <input type="hidden" name="nome" id="hidden_nome">
                 <br><br>
 
-<!--                 <label><strong>Selecione as terapias para hoje:</strong></label>
-                <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
-                    <% configs.forEach(regra => { %>
-                    <% if(regra.terapia.toLowerCase() !== 'apometria') { %>
-                            <div style="padding: 10px; border: 1px solid #eee; border-radius: 5px;">
-                                <input type="checkbox" name="terapias" value="<%= regra.terapia %>" id="chk_<%= regra.terapia %>">
-                                <label for="chk_<%= regra.terapia %>" style="text-transform: capitalize;">
-                                    <%= regra.terapia.replace(/_/g, ' ') %>
-                                </label>
-                            </div>
-                        <% } %>
-                    <% }) %>
-                </div> -->
                 <label><strong>Selecione as terapias para hoje:</strong></label>
                 <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
                     <% configs.forEach(regra => { %>

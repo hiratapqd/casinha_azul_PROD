@@ -83,15 +83,6 @@ exports.getDashboard = async (req, res) => {
             Voluntario.find({ esta_ativo: { $ne: "Não" } }).lean()
         ]);
 
-        // Transformar o resultado da agregação em um objeto fácil de ler no EJS
-/*         const atendimentosHoje = {
-            apometrico: 0,
-            reiki: 0,
-            auriculo: 0,
-            passe: 0,
-            maos: 0,
-            homeopatia: 0
-        }; */
         const atendimentosHoje = {
             apometria: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'apometria' }),
             reiki: await Atendimento.countDocuments({ data: { $gte: hojeInicio, $lte: hojeFim }, tipo: 'reiki' }),
@@ -106,7 +97,7 @@ exports.getDashboard = async (req, res) => {
             }
         });
         // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
-        // Passo A: CPFs com Apometria antiga (> 14 dias)
+/*         // Passo A: CPFs com Apometria antiga (> 14 dias)
         const fizeramApometriaAntiga = await Atendimento.distinct("cpf_assistido", {
             tipo: "apometria", 
             data: { $lt: limite14Dias }
@@ -114,7 +105,7 @@ exports.getDashboard = async (req, res) => {
 
         // Passo B: CPFs com QUALQUER outro tratamento (diferente de Apometria)
         const fizeramOutros = await Atendimento.distinct("cpf_assistido", {
-            tipo: { $ne: "apometrico" } 
+            tipo: { $ne: "apometria" } 
         });
 
         const setOutros = new Set(fizeramOutros.map(cpf => String(cpf)));
@@ -125,8 +116,28 @@ exports.getDashboard = async (req, res) => {
         const assistidosUnicos = await Atendimento.distinct("cpf_assistido");
         const taxaAbandono = assistidosUnicos.length > 0 
             ? ((abandonosReais.length / assistidosUnicos.length) * 100).toFixed(1) 
-            : 0;
+            : 0; */
+        // 2.1. Pegar todos os CPFs únicos que já fizeram Apometria em qualquer tempo
+        const todosQueFizeramApometria = await Atendimento.distinct("cpf_assistido", { tipo: "apometria" });
 
+        // 2.2. Pegar todos os CPFs que já fizeram QUALQUER OUTRO tipo de atendimento (Reiki, Passe, etc)
+        const todosQueFizeramOutros = await Atendimento.distinct("cpf_assistido", { 
+            tipo: { $ne: "apometria" } 
+        });
+
+        const setOutros = new Set(todosQueFizeramOutros.map(cpf => String(cpf)));
+
+        // 2.3. Abandono = Quem está na lista da Apometria mas NÃO está na lista de Outros
+        const abandonosReais = todosQueFizeramApometria.filter(cpf => !setOutros.has(String(cpf)));
+
+        // 2.4. Cálculo da Taxa
+        // Total de pessoas que passaram pela Apometria (base do cálculo)
+        const totalBaseApometria = todosQueFizeramApometria.length;
+
+        const taxaAbandono = totalBaseApometria > 0 
+            ? ((abandonosReais.length / totalBaseApometria) * 100).toFixed(1) 
+            : 0;
+            
         // 3. Mapeamento Geral
         const mapaGeral = {
             "Apometria": ["apometria"],

@@ -139,7 +139,7 @@ document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
         const respDados = await fetch(`/api/dados-assistido/${cpf}`);
         if (respDados.ok) {
             const assistido = await respDados.json();
-            console.log("Dados recebidos:", assistido); // Para você conferir no F12
+            // console.log("Dados recebidos:", assistido); // Para você conferir no F12
 
             if (assistido) {
                 // CORREÇÃO DOS NOMES DOS CAMPOS (Adicionando _assistido)
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', async function(e) {
             e.preventDefault(); // 🛑 Bloqueia o recarregamento da página
             
-            console.log("Iniciando envio do formulário..."); // Teste de clique
+            // console.log("Iniciando envio do formulário..."); // Teste de clique
 
             const formData = new FormData(form);
             const dados = Object.fromEntries(formData.entries());
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 const resultado = await response.json();
-                console.log("Resposta do servidor:", resultado);
+                // console.log("Resposta do servidor:", resultado);
 
                 if (resultado.status === 'sucesso') {
                     Swal.fire({

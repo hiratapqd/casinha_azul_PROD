@@ -101,7 +101,7 @@ async function buscarLivro() {
 
     try {
         // --- TENTATIVA 1: GOOGLE BOOKS ---
-        console.log("Tentando Google Books...");
+        // console.log("Tentando Google Books...");
         const respGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
         
         if (respGoogle.ok) {
@@ -118,7 +118,7 @@ async function buscarLivro() {
             }
         }
 
-        console.log("Google falhou ou cota excedida. Tentando Brasil API...");
+        // console.log("Google falhou ou cota excedida. Tentando Brasil API...");
         const respBrasil = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`);
         
         if (respBrasil.ok) {
