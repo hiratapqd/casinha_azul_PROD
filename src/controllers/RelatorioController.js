@@ -137,13 +137,13 @@ exports.getApometriaInativos = async (req, res) => {
         for (const registro of ultimosAtendimentos) {
             const dataAtendimento = new Date(registro.ultimaData);
             const cpfParaBusca = registro._id;
-            console.log({ cpfParaBusca });
+            // console.log({ cpfParaBusca });
             const dadosCadastrais = await Assistido.findById(cpfParaBusca).lean();
-            if (!dadosCadastrais) {
+/*             if (!dadosCadastrais) {
                 console.log(`⚠️ Atenção: CPF ${cpfParaBusca} não encontrado na collection Assistidos!`);
             } else {
                 console.log(`✅ Cadastro encontrado para: ${dadosCadastrais.nome_assistido}`);
-            }
+            } */
             const item = {
                 cpf: cpfParaBusca,
                 nome: registro.nome,

@@ -72,8 +72,12 @@
     }
     lista.forEach(item => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td style="padding: 10px; border-bottom: 1px solid #eee;">${new Date(item.data).toLocaleDateString('pt-BR')}</td>
-                      <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.observacoes || ''}</td>`;
+      const terapeuta = item.nome_voluntario || item.voluntario || '-';
+      const obs = item.observacoes_atendimento || item.observacoes || '-';
+      const dataFormatada = new Date(item.data).toLocaleDateString('pt-BR');
+      tr.innerHTML = `<td style="padding: 10px; border-bottom: 1px solid #eee;">${dataFormatada}</td>
+                      <td style="padding: 10px; border-bottom: 1px solid #eee;">${terapeuta}</td>
+                      <td style="padding: 10px; border-bottom: 1px solid #eee;">${obs}</td>`;
       corpoTabela.appendChild(tr);
     });
   }

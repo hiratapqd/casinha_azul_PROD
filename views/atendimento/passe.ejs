@@ -90,7 +90,7 @@
       // Busca Histórico e a queixa que veio do atendimento anterior (Reiki/Apometria/etc)
       const resHist = await fetch(`/api/historico/passe/${cpf}`).then(r => r.json());
       
-      if (resHist.queixa_atual) {
+/*       if (resHist.queixa_atual) {
           const campoObs = document.getElementById('descricao_atendimento');
           // No passe, a "queixa" geralmente é a observação do terapeuta anterior
           const textoQueixa = `ENCAMINHAMENTO/QUEIXA:\n${resHist.queixa_atual}\n-----------------------------\n`;
@@ -98,7 +98,7 @@
           if (campoObs && campoObs.value.trim() === "") {
               campoObs.value = textoQueixa;
           }
-      }
+      } */
 
       renderizarTabela(resHist.historico || []);
     } catch (err) {

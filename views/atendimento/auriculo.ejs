@@ -93,14 +93,14 @@
       const resHist = await fetch(`/api/historico/auriculo/${cpf}`).then(r => r.json());
       
       // Carrega a queixa se existir
-      if (resHist.queixa_atual) {
+/*       if (resHist.queixa_atual) {
           const campoObs = document.getElementById('descricao_atendimento');
           const textoQueixa = `QUEIXA DA RECEPÇÃO:\n${resHist.queixa_atual}\n-----------------------------\nOBSERVAÇÕES:\n`;
           
           if (campoObs.value.trim() === "") {
               campoObs.value = textoQueixa;
           }
-      }
+      } */
 
       renderizarTabela(resHist.historico || []);
     } catch (err) {

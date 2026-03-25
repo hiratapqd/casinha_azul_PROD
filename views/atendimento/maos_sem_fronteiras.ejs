@@ -5,6 +5,7 @@
     
     <form action="/atendimento/salvar" method="POST" class="form-container" id="atendimentoForm">
         <input type="hidden" name="tipo" value="maos_sem_fronteiras">
+        <input type="hidden" name="idSolicitacao" id="idSolicitacao">
         
         <div class="form-row">
             <div class="form-group">
@@ -77,12 +78,17 @@
     const cpf = this.value.trim().replace(/\D/g, '');
     if (cpf.length < 11) return;
     const dataHoje = new Date().toISOString().split('T')[0];
-    const tipoTerapia = "reiki"; // Mude para 'auriculo' ou 'homeopatia' nos outros arquivos
+    const tipoTerapia = "maos_sem_fronteiras";
 
-    // CORREÇÃO: Montando o ID conforme o padrão da recepção
+    const idGerado = `${cpf}_${tipoTerapia}_${dataHoje}`;
+    const campoId = document.getElementById('idSolicitacao');
+    if (campoId) {
+        campoId.value = idGerado;
+        console.log("ID Gerado para o servidor:", idGerado);
+    }
     document.getElementById('idSolicitacao').value = `${cpf}_${tipoTerapia}_${dataHoje}`;
     
-    //console.log("ID Gerado para busca/baixa:", document.getElementById('idSolicitacao').value);
+    console.log("ID Gerado para busca/baixa:", document.getElementById('idSolicitacao').value);
     try {
       // Busca Nome
       const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
