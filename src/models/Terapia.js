@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const TerapiaSchema = new mongoose.Schema({
-    terapia: { type: String, required: true, unique: true }, // ex: "apometria", "reiki"
+    terapia: { type: String, required: true, unique: true }, 
     limites: {
         segunda: { type: Number, default: 0 },
         terca: { type: Number, default: 0 },
@@ -11,6 +11,6 @@ const TerapiaSchema = new mongoose.Schema({
         sabado: { type: Number, default: 0 },
         domingo: { type: Number, default: 0 }
     }
-}, { collection: 'terapias' }); // Força o nome da coleção que você já usa
+}, { collection: 'terapias' });
 
 module.exports = mongoose.model('Terapia', TerapiaSchema);

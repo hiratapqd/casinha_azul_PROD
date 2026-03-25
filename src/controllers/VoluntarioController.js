@@ -3,20 +3,16 @@ const Voluntario = require('../models/Voluntario');
 exports.criarVoluntario = async (req, res) => {
     try {
         const dados = req.body;
-        // console.log("Dados recebidos no servidor:", dados); // Verifique o terminal do VS Code!
 
-        // Se o CPF já existir e NÃO for uma atualização forçada, avisamos o front
         const existe = await Voluntario.findById(dados.cpf);
         if (existe && dados.forceUpdate !== 'true') {
             return res.json({ status: 'conflito', mensagem: 'CPF já cadastrado' });
         }
 
-        // 1. Tratamento para atualização (forceUpdate)
         if (dados.forceUpdate === 'true' || dados.forceUpdate === true) {
             await Voluntario.findByIdAndDelete(dados.cpf);
         }
 
-        // 2. Criando o objeto com os nomes exatos vindos do EJS
         const novoVoluntario = new Voluntario({
             _id: dados.cpf, 
             nome: dados.nome,
@@ -50,11 +46,10 @@ exports.criarVoluntario = async (req, res) => {
 
 exports.getVisualizarVoluntarios = async (req, res) => {
     try {
-        const { dia, terapia } = req.query; // Captura os dados da URL
+        const { dia, terapia } = req.query; 
         let filtro = {};
 
         if (dia && terapia) {
-            // Ajusta o filtro para buscar dentro do objeto de disponibilidade
             filtro[`disponibilidade.${terapia}`] = dia;
         }
 

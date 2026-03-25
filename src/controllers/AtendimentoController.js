@@ -74,21 +74,20 @@ exports.salvarAtendimento = async (req, res) => {
     }
 };
 
-// Busca histórico específico para a tabela inferior
-exports.getHistoricoPorTipo = async (req, res) => {
-    try {
-        const { tipo, cpf } = req.params;
-        const historico = await Atendimento.find({ cpf_assistido: cpf, tipo: tipo }).sort({ data: -1 }).lean();
-        
-        // Busca a queixa na solicitação do dia (se houver)
-        const hoje = new Date().toISOString().split('T')[0];
-        const solicitacao = await Solicitacao.findById(`${cpf}_${hoje}`).lean();
+    // Busca histórico específico para a tabela inferior
+    exports.getHistoricoPorTipo = async (req, res) => {
+        try {
+            const { tipo, cpf } = req.params;
+            const historico = await Atendimento.find({ cpf_assistido: cpf, tipo: tipo }).sort({ data: -1 }).lean();
+            
+            const hoje = new Date().toISOString().split('T')[0];
+            const solicitacao = await Solicitacao.findById(`${cpf}_${hoje}`).lean();
 
-        res.json({
-            historico: historico,
-            queixa_atual: solicitacao ? solicitacao.queixa_motivo : ""
-        });
-    } catch (err) {
-        res.status(500).json({ historico: [], queixa_atual: "" });
-    }
-};
+            res.json({
+                historico: historico,
+                queixa_atual: solicitacao ? solicitacao.queixa_motivo : ""
+            });
+        } catch (err) {
+            res.status(500).json({ historico: [], queixa_atual: "" });
+        }
+    };

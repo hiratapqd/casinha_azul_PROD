@@ -12,5 +12,4 @@ const AtendimentoSchema = new mongoose.Schema({
     collection: 'atendimentos'
 });
 
-// O registro do modelo deve acontecer apenas UMA VEZ ao final do arquivo
 module.exports = mongoose.model('Atendimento', AtendimentoSchema);

@@ -3,57 +3,65 @@ const Assistido = require('../models/Assistido');
 
 exports.getAtendimentosHoje = async (req, res) => {
     try {
-        const hojeInicio = new Date();
-        hojeInicio.setHours(0, 0, 0, 0);
+        // 1. Ajuste de fuso horário para Brasília
+        const agora = new Date();
+        const offsetBrasilia = -3;
+        const dataBrasilia = new Date(agora.getTime() + (offsetBrasilia * 60 * 60 * 1000));
+        const hojeString = dataBrasilia.toISOString().split('T')[0];
 
-        const hojeFim = new Date();
-        hojeFim.setHours(23, 59, 59, 999);
+        // 2. Início e fim do dia real para a busca
+        const hojeInicio = new Date(`${hojeString}T00:00:00-03:00`);
+        const hojeFim = new Date(`${hojeString}T23:59:59-03:00`);
 
-        // Busca atendimentos de hoje
+        //console.log(`🔎 Buscando atendimentos entre: ${hojeInicio} e ${hojeFim}`);
+
         const atendimentos = await Atendimento.find({
             data: { $gte: hojeInicio, $lte: hojeFim }
-        }).sort({ data: -1 });
+        }).sort({ data: -1 }).lean();
 
-        // Prepara o objeto de contagem (counts) que o EJS está pedindo
+        // 3. Inicialização dos contadores (Slugs padronizados)
         const counts = {
             reiki: 0,
-            apometrico: 0,
+            apometria: 0,
             auriculo: 0,
+            passe: 0,
             maos_sem_fronteiras: 0,
-            homeopatico: 0,
-            passe: 0
+            homeopatico: 0
         };
 
-        // Soma cada tipo encontrado
+        // 4. Contagem com normalização de texto
         atendimentos.forEach(a => {
-            if (counts.hasOwnProperty(a.tipo)) {
-                counts[a.tipo]++;
+            const tipoNormalizado = a.tipo ? a.tipo.trim().toLowerCase() : "";
+            if (counts.hasOwnProperty(tipoNormalizado)) {
+                counts[tipoNormalizado]++;
             }
         });
 
-        // Define as abas exatamente como o EJS espera percorrer no loop
+        // console.log("📊 Contagem final enviada ao EJS:", counts);
+
+        // 5. Definição das abas (O slug deve ser igual à chave do 'counts')
         const tabs = [
+            { slug: '__todos', nome: 'Todos' },
             { slug: 'reiki', nome: 'Reiki' },
-            { slug: 'apometrico', nome: 'Apometria' },
+            { slug: 'apometria', nome: 'Apometria' },
             { slug: 'auriculo', nome: 'Aurículo' },
+            { slug: 'passe', nome: 'Passe' },
             { slug: 'maos_sem_fronteiras', nome: 'Mãos sem Fronteiras' },
-            { slug: 'homeopatico', nome: 'Homeopático' },
-            { slug: 'passe', nome: 'Passe' }
+            { slug: 'homeopatico', nome: 'Homeopático' }
         ];
 
-        // Agora enviamos TUDO: os atendimentos, os counts e as abas
         res.render('relatorios/atendimentos_hoje', { 
             atendimentos, 
             counts, 
-            tabs 
+            tabs,
+            hoje: dataBrasilia.toLocaleDateString('pt-BR')
         });
 
     } catch (err) {
-        console.error("Erro no relatório de hoje:", err);
+        console.error("❌ Erro no RelatorioController:", err);
         res.status(500).send("Erro ao carregar relatório.");
     }
 };
-
 exports.getRelatorioGeralAssistidos = async (req, res) => {
     try {
         const assistidosComAtendimentos = await Assistido.aggregate([
@@ -97,7 +105,6 @@ exports.getApometriaInativos = async (req, res) => {
     try {
         const hoje = new Date();
         
-        // Marcos temporais
         const data30 = new Date();
         data30.setDate(hoje.getDate() - 30);
         data30.setHours(23, 59, 59, 999);
@@ -110,17 +117,6 @@ exports.getApometriaInativos = async (req, res) => {
         data90.setDate(hoje.getDate() - 90);
         data90.setHours(23, 59, 59, 999);
 
-
-        // 1. Agregação para pegar o último atendimento de apometria de cada pessoa
-/*         const ultimosAtendimentos = await Atendimento.aggregate([
-            { $match: { tipo: 'apometrico' } },
-            { $sort: { data: -1 } },
-            { $group: {
-                _id: "$cpf_assistido",
-                ultimaData: { $first: "$data" },
-                nome: { $first: "$nome_assistido" }
-            }}
-        ]); */
         const ultimosAtendimentos = await Atendimento.aggregate([
             { $sort: { data: -1 } },
             { $group: {
@@ -130,12 +126,11 @@ exports.getApometriaInativos = async (req, res) => {
                 ultimoTipo: { $first: "$tipo" }
             }},
             { $match: { 
-                ultimoTipo: "apometria", // Regra: o último foi apometria
-                ultimaData: { $lte: data30 } // E faz mais de 30 dias
+                ultimoTipo: "apometria",
+                ultimaData: { $lte: data30 } 
             }}
         ]);
 
-        // 2. Arrays para as abas (listas) e objeto para os cartões (counts)
         const listas = { d30: [], d60: [], d90: [] };
         const counts = { d30: 0, d60: 0, d90: 0 };
 
@@ -146,13 +141,10 @@ exports.getApometriaInativos = async (req, res) => {
                 cpf: registro._id,
                 nome: registro.nome,
                 ultimaData: registro.ultimaData,
-                // Aqui você pode buscar telefone/email se precisar, 
-                // ou deixar vazio se o EJS tratar
                 telefone: "", 
                 email: ""
             };
 
-            // Lógica de categorização (Quem está há mais tempo sem vir)
             if (dataAtendimento < data90) {
                 listas.d90.push(item);
                 counts.d90++;
@@ -165,7 +157,6 @@ exports.getApometriaInativos = async (req, res) => {
             }
         }
 
-        // 3. Renderiza enviando 'listas' E 'counts'
         res.render('relatorios/apometria_inativos', { 
             listas, 
             counts 

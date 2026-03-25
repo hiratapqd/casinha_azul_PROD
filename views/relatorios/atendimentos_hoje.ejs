@@ -1,130 +1,143 @@
-<html>
-    <link rel="stylesheet" href="/styles/styles.css">
-    <%- include('../partials/header') %>
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
 
-  <style>
-    .container { max-width: 1100px; margin: 20px auto; font-family: Arial, sans-serif; }
-    .tabs { display:flex; gap:8px; margin: 14px 0; flex-wrap:wrap; }
-    .tab { padding:8px 12px; border:1px solid #ddd; border-radius:10px; cursor:pointer; background:#fafafa; }
-    .tab.active { border-color:#1d6fd8; background:#eaf2ff; }
-    table { width:100%; border-collapse:collapse; margin-top: 10px; }
-    th, td { border:1px solid #ddd; padding:10px; text-align:left; }
-    th { background:#f8f9fa; }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    input { padding:8px; }
-    .muted { color:#777; }
-    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius:999px; font-size:12px; margin-left:6px; }
-  </style>
+<style>
+    .container { max-width: 1200px; margin: 20px auto; font-family: 'Segoe UI', Arial, sans-serif; padding: 0 15px; }
+    
+    /* Abas Estilo Cápsula */
+    .tabs { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+    .tab { 
+        padding: 10px 18px; 
+        border: 1px solid #ddd; 
+        border-radius: 25px; 
+        cursor: pointer; 
+        background: #fff; 
+        font-weight: 600;
+        color: #555;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    .tab:hover { background: #f0f7ff; border-color: #1277bb; color: #1277bb; }
+    .tab.active { background: #1277bb; color: #fff; border-color: #1277bb; box-shadow: 0 4px 10px rgba(18,119,187,0.3); }
 
-  <head>
-    <title>Atendimentos de Hoje</title>
-  </head>
-  <body>
+    .pill { 
+        background: rgba(0,0,0,0.05); 
+        padding: 2px 8px; 
+        border-radius: 12px; 
+        font-size: 12px; 
+        margin-left: 8px; 
+    }
+    .tab.active .pill { background: rgba(255,255,255,0.2); color: #fff; }
 
-      <div class="container">
-    <h2>Atendimentos de Hoje</h2>
-    <div class="muted">Use os botões para filtrar por terapia.</div>
+    /* Tabela Profissional */
+    .table-container { overflow-x: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th { 
+        background-color: #1277bb !important; 
+        color: white !important; 
+        padding: 14px; 
+        text-align: left; 
+        text-transform: uppercase;
+        font-size: 13px;
+    }
+    td { padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 14px; }
+    tbody tr:nth-child(even) { background-color: #f9f9f9; }
+    tbody tr:hover { background-color: #f1f7ff; }
 
-    <div class="tabs" id="tabs">
-      <div class="tab active" data-tipo="__todos">
-        Todos <span class="pill"><%= (atendimentos || []).length %></span>
-      </div>
+    .search-row { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+    input#search { padding: 10px; width: 300px; border: 1px solid #ddd; border-radius: 8px; }
+    .counter-info { font-weight: bold; color: #1277bb; }
+</style>
 
-      <% (terapias || []).forEach(t => { %>
-        <div class="tab" data-tipo="<%= t.slug %>">
-          <%= t.nome %>
-          <span class="pill"><%= (counts && counts[t.slug]) ? counts[t.slug] : 0 %></span>
-        </div>
-      <% }) %>
+<div class="container">
+    <h2>Relatório de Atendimentos - <%= hoje %></h2>
+
+
+
+    <div class="tabs">
+        <% tabs.forEach(t => { %>
+            <div class="tab <%= t.slug === '__todos' ? 'active' : '' %>" data-tipo="<%= t.slug %>">
+                <%= t.nome %>
+                <span class="pill"><%= (counts && counts[t.slug] !== undefined) ? counts[t.slug] : (t.slug === '__todos' ? atendimentos.length : 0) %></span>
+            </div>
+        <% }) %>
     </div>
-
-    <div class="row">
-      <label>Buscar:</label>
-      <input type="text" id="q" placeholder="cpf, nome, voluntário..." />
-      <span class="muted">Mostrando: <strong id="qt">0</strong></span>
+    <div class="search-row">
+        <input type="text" id="search" placeholder="🔍 Buscar por nome, CPF ou Terapeuta...">
+        <span class="counter-info">Mostrando: <span id="qt">0</span> atendimentos</span>
     </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Tipo</th>
+                    <th>CPF</th>
+                    <th>Assistido</th>
+                    <th>Terapeuta</th>
+                    <th>Observações</th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+                </tbody>
+        </table>
+    </div>
+</div>
 
-    <table id="tbl">
-      <thead>
-        <tr>
-          <th>Data/Hora</th>
-          <th>Tipo</th>
-          <th>CPF</th>
-          <th>Nome</th>
-          <th>Voluntário</th>
-          <th>Observações</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <script>
-    // const atendimentos = <%- JSON.stringify(atendimentos || []) %>;
+<script>
     const atendimentos = <%- JSON.stringify(atendimentos) %>;
     let tipoAtual = "__todos";
-
-    const tabs = Array.from(document.querySelectorAll(".tab"));
-    const tbody = document.querySelector("#tbl tbody");
-    const q = document.getElementById("q");
+    const tbody = document.getElementById("tbody");
     const qt = document.getElementById("qt");
+    const searchInput = document.getElementById("search");
+    const tabs = document.querySelectorAll(".tab");
 
-    function fmt(d) {
-      try { return new Date(d).toLocaleString("pt-BR"); } catch { return ""; }
+    function fmt(dateStr) {
+        return new Date(dateStr).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function render() {
-      const term = q.value.trim().toLowerCase();
-      tbody.innerHTML = "";
-      let count = 0;
+    function filtrar() {
+        const term = searchInput.value.toLowerCase().trim();
+        tbody.innerHTML = "";
+        let count = 0;
 
-      atendimentos.forEach(a => {
-        if (tipoAtual !== "__todos" && a.tipo !== tipoAtual) return;
+        atendimentos.forEach(a => {
+            const tipoA = a.tipo ? a.tipo.trim().toLowerCase() : "";
+            
+            // Filtro por Aba
+            if (tipoAtual !== "__todos" && tipoA !== tipoAtual) return;
 
-        const nome = a.nome_assistido || "";
-        const cpf = a.cpf_assistido || "";
-        const voluntario = a.voluntario || "";
-        const obs = a.observacoes || "";
+            // Filtro por Texto
+            const textoBusca = `${a.nome_assistido} ${a.cpf_assistido} ${a.voluntario}`.toLowerCase();
+            if (term && !textoBusca.includes(term)) return;
 
-        const line = `${cpf} ${nome} ${voluntario} ${obs}`.toLowerCase();
-        if (term && !line.includes(term)) return;
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${a.data ? fmt(a.data) : ""}</td>
-          <td>${a.tipo || ""}</td>
-          <td>${cpf}</td>
-          <td>${nome}</td>
-          <td>${voluntario}</td>
-          <td>${obs}</td>
-        `;
-        tbody.appendChild(tr);
-        count++;
-      });
-
-      qt.textContent = count;
-
-      if (count === 0) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="6" class="muted">Nenhum atendimento encontrado para o filtro.</td>`;
-        tbody.appendChild(tr);
-      }
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${fmt(a.data)}</td>
+                <td style="text-transform: capitalize;">${a.tipo}</td>
+                <td>${a.cpf_assistido}</td>
+                <td><strong>${a.nome_assistido}</strong></td>
+                <td>${a.voluntario}</td>
+                <td class="muted">${a.observacoes || ''}</td>
+            `;
+            tbody.appendChild(tr);
+            count++;
+        });
+        qt.textContent = count;
     }
 
     tabs.forEach(t => {
-      t.addEventListener("click", () => {
-        tabs.forEach(x => x.classList.remove("active"));
-        t.classList.add("active");
-        tipoAtual = t.dataset.tipo;
-        q.value = "";
-        render();
-      });
+        t.addEventListener("click", () => {
+            tabs.forEach(x => x.classList.remove("active"));
+            t.classList.add("active");
+            tipoAtual = t.getAttribute("data-tipo");
+            filtrar();
+        });
     });
 
-    q.addEventListener("input", render);
+    searchInput.addEventListener("input", filtrar);
+    window.onload = filtrar;
+</script>
 
-    render();
-  </script>
-  </body>
-</html>
 <%- include('../partials/footer') %>

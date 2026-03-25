@@ -14,7 +14,6 @@ const dados = req.body;
         const brasiliaTime = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
 
         // 2. DATA DO ATENDIMENTO (Vinda do formulário: YYYY-MM-DD)
-        // Precisamos definir o início e fim do dia BASEADO NO FORMULÁRIO para a contagem
         const hojeInicio = new Date(dados.data + "T00:00:00-03:00");
         const hojeFim = new Date(dados.data + "T23:59:59-03:00");
 
@@ -28,12 +27,10 @@ const dados = req.body;
         let limiteEspera = 0;
 
         if (configLimite) {
-            // PRIORIDADE 1: O dia da semana dentro do objeto 'limites' (Ex: terca: 4)
             if (configLimite.limites && configLimite.limites[diaNome] !== undefined) {
                 limitePrincipal = configLimite.limites[diaNome];
                 console.log(`✅ Sucesso! Capturado limite de ${diaNome}: ${limitePrincipal}`);
             } 
-            // PRIORIDADE 2: O campo 'limite_principal' da raiz do documento
             else if (configLimite.limite_principal !== undefined) {
                 limitePrincipal = configLimite.limite_principal;
                 console.log(`ℹ️ Limite do dia não definido, usando limite_principal: ${limitePrincipal}`);
@@ -42,14 +39,13 @@ const dados = req.body;
             limiteEspera = configLimite.limite_espera || 0;
         } else {
             console.log("⚠️ Nenhuma configuração encontrada no banco. Usando padrão zero.");
-            limitePrincipal = 2; // Opcional: um fallback de segurança
+            limitePrincipal = 2; 
         }
         const limiteTotal = limitePrincipal + limiteEspera;
 
-        // 4. CONTAR ATENDIMENTOS JÁ EXISTENTES PARA O DIA SELECIONADO
-        const dataBase = dados.data; // Formato "YYYY-MM-DD"
+        const dataBase = dados.data; 
         const totalHoje = await Solicitacao.countDocuments({
-            tipo: tipoParaBusca, // Certifique-se que na collection 'solicitacoes' o campo chama 'tipo'
+            tipo: tipoParaBusca, 
             data_pedido: { 
                 $gte: hojeInicio, 
                 $lte: hojeFim 
@@ -60,18 +56,15 @@ const dados = req.body;
         console.log(`🔎 Filtro: ${tipoParaBusca} entre ${dataBase}T00:00 e 23:59`);
         console.log(`Contagem para ${dataBase}: ${totalHoje} de ${limiteTotal}`);
 
-        // 5. BLOQUEIO DE LIMITE
         if (totalHoje >= limiteTotal) {
             console.log(`🚫 Limite atingido para ${diaNome}: ${totalHoje}/${limiteTotal}`);
             
-            // O RETURN aqui é OBRIGATÓRIO para interromper a função
             return res.json({ 
                 status: 'limite_excedido', 
                 mensagem: `O limite de atendimentos para ${diaNome} (${limiteTotal} vagas) já foi alcançado.` 
             });
         }
         
-        // 6. Cálculo da Idade do Assistido
         const nasc = new Date(dados.data_nascimento);
         let idade = agoraUTC.getFullYear() - nasc.getFullYear();
         if (brasiliaTime < new Date(brasiliaTime.getFullYear(), nasc.getMonth(), nasc.getDate())) {
@@ -79,7 +72,6 @@ const dados = req.body;
         }
 
  
-        // 7. Gravar/Atualizar Assistido
         await Assistido.findByIdAndUpdate(
             dados.cpf_assistido,
             {
@@ -97,7 +89,6 @@ const dados = req.body;
         );
 
 
-        // 8. Lógica de Fila baseada no Tipo 
         const idSolicitacao = `${dados.cpf_assistido}_${dados.data}`;
         
         const contagem = await Solicitacao.countDocuments({ 
@@ -107,7 +98,6 @@ const dados = req.body;
         
         const posicaoFila = contagem + 1;
 
-        // VERIFICAÇÃO DE BLOQUEIO TOTAL
         if (posicaoFila > limiteTotal) {
             return res.json({ 
                 status: 'bloqueado', 
@@ -115,10 +105,8 @@ const dados = req.body;
             });
         }
 
-        // 9. CRIAR O OBJETO PARA SALVAR
         const novaPosicao = totalHoje + 1;
         const statusFinal = novaPosicao <= limitePrincipal ? 'Confirmado' : 'Lista de Espera';
-        // console.log(`💾 Tentando gravar para o dia ${dados.data}. Posição: ${novaPosicao}`);
 
         const novaSolicitacao = new Solicitacao({
             _id: idSolicitacao,
@@ -132,13 +120,8 @@ const dados = req.body;
             status: (totalHoje + 1) <= limitePrincipal ? 'Confirmado' : 'Espera'
         });
 
-        // console.log(`💾 Tentando gravar posição ${totalHoje + 1} no Horário Brasília...`);
-        // console.log(`💾 Tentando salvar: ${novaSolicitacao._id} como ${statusFinal}`);
-
-
         try {
             await novaSolicitacao.save();
-            // console.log("✅ Gravado com sucesso no MongoDB!");
             
             return res.json({
                 status: 'sucesso',
@@ -147,9 +130,6 @@ const dados = req.body;
                 limite: limitePrincipal
             });
         } catch (erroSave) {
-            // console.error("❌ ERRO AO GRAVAR NO BANCO:", erroSave.message);
-            
-            // Se o erro for código 11000, é CPF duplicado no mesmo dia
             if (erroSave.code === 11000) {
                 return res.json({ 
                     status: 'duplicado', 
@@ -195,7 +175,6 @@ exports.getFilaHoje = async (req, res) => {
         const hojeFim = new Date();
         hojeFim.setHours(23, 59, 59, 999);
 
-        // Alterado de 'data' para 'data_pedido' para coincidir com o que é salvo
         const solicitacoes = await Solicitacao.find({
             data_pedido: { $gte: hojeInicio, $lte: hojeFim }
         }).sort({ data_pedido: 1 }); 
@@ -226,15 +205,13 @@ exports.iniciarAtendimento = async (req, res) => {
 
 exports.cancelarSolicitacao = async (req, res) => {
     try {
-        const { id } = req.params; // Recebe o ID (CPF_DATA)
+        const { id } = req.params;
         
-        // Atualiza o status para 'Cancelado' na collection 'solicitacoes' 
         await Solicitacao.findOneAndUpdate(
             { _id: id }, 
             { status: 'Cancelado' }
         );
         
-        // Redireciona de volta para a fila atualizada
         res.redirect('/fila-atendimento');
     } catch (err) {
         console.error("Erro ao cancelar solicitação:", err);

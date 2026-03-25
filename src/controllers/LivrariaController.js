@@ -85,7 +85,6 @@ exports.getEstoque = async (req, res) => {
             
             // 3. Alerta de Reposição (Estoque < Média mensal dos últimos 90 dias)
             livro.mediaMensal = (livro.vendas90 / 3);
-            //livro.alertaReposicao = livro.estoque_atual < livro.mediaMensal;
             livro.alertaReposicao = livro.estoque_atual < (livro.estoque_minimo || 2) || livro.estoque_atual < livro.mediaMensal;
 
             return livro;
@@ -113,8 +112,6 @@ exports.getEstoque = async (req, res) => {
 exports.getEditarLivro = async (req, res) => {
     try {
         const livro = await Livro.findById(req.params.id);
-        // Adicione um console.log aqui para testar se a editora existe no objeto
-//        console.log("Dados do livro para edição:", livro); 
         
         res.render('livraria/editar_livro', { livro });
     } catch (err) {
@@ -178,7 +175,7 @@ exports.registrarVenda = async (req, res) => {
 
 exports.registrarVendaRapida = async (req, res) => {
     try {
-        const { isbn, qtd } = req.body; // Recebe o ISBN e a quantidade (default 1)
+        const { isbn, qtd } = req.body;
         const livro = await Livro.findById(isbn);
 
         if (!livro || livro.estoque_atual < qtd) {

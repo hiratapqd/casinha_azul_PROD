@@ -36,7 +36,7 @@ app.use(async (req, res, next) => {
         // Caso o banco esteja vazio ou a coleção não exista, usamos estes como padrão
         if (!terapiasAtivas || terapiasAtivas.length === 0) {
             terapiasAtivas = [
-                { nome: "Apometria", slug: "apometrico" },
+                { nome: "Apometria", slug: "apometria" },
                 { nome: "Reiki", slug: "reiki" },
                 { nome: "Aurículo", slug: "auriculo" }
             ];
@@ -60,5 +60,5 @@ app.use('/', indexRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-    console.log(`📡 Ambiente: ${process.env.NODE_ENV || 'production'}`);
+    console.log(`📡 Ambiente: ${process.env.NODE_ENV || 'develpment'}`);
 });

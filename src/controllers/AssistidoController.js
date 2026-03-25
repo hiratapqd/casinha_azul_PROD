@@ -3,12 +3,9 @@ const Assistido = require('../models/Assistido');
 exports.criarAssistido = async (req, res) => {
     
     try {
-        // const { cpf, nome, telefone, email } = req.body;
         const dados = req.body;
-        // console.log("Dados recebidos no Controller:", dados);
         // 1. Verifica se o assistido já existe (usando o CPF como _id)
         const cpfLimpo = (dados.cpf_assistido || dados.cpf) ? (dados.cpf_assistido || dados.cpf).replace(/\D/g, '') : null;
-        // console.log("CPF Limpo gerado:", cpfLimpo);
         if (!cpfLimpo) {
             return res.status(400).json({ status: 'erro', mensagem: 'CPF é obrigatório' });
         }
@@ -51,7 +48,6 @@ exports.criarAssistido = async (req, res) => {
     }
 };
 
-// Rota para renderizar a página de formulário
 exports.renderFormCadastro = (req, res) => {
     res.render('cadastro_assistidos');
 };
