@@ -98,7 +98,7 @@ exports.getDashboard = async (req, res) => {
         });
         // 2. Lógica de Taxa de Abandono (AJUSTADO PARA 'tipoAtendimento' e 'Apometria')
 
-        // 2.1. Pegar todos os CPFs únicos que já fizeram Apometria em qualquer tempo
+/*         // 2.1. Pegar todos os CPFs únicos que já fizeram Apometria em qualquer tempo
         const todosQueFizeramApometria = await Atendimento.distinct("cpf_assistido", { tipo: "apometria" });
 
         // 2.2. Pegar todos os CPFs que já fizeram QUALQUER OUTRO tipo de atendimento (Reiki, Passe, etc)
@@ -117,8 +117,34 @@ exports.getDashboard = async (req, res) => {
 
         const taxaAbandono = totalBaseApometria > 0 
             ? ((abandonosReais.length / totalBaseApometria) * 100).toFixed(1) 
+            : 0; */
+        // --- 2. CÁLCULO DE ABANDONO (Baseado em quem não volta mais) ---
+        const trintaDiasAtras = new Date(getDataBrasilia());
+        trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+
+        // Pegamos a última vez que cada pessoa esteve na casa (Apometria ou Passe)
+        const presencasRecentes = await Atendimento.aggregate([
+            { $match: { tipo: { $in: ['apometria', 'passe'] } } },
+            { $group: {
+                _id: "$cpf_assistido",
+                ultimaVez: { $max: "$data" }
+            }}
+        ]);
+
+        // 1. Quem veio nos últimos 30 dias (Ativos)
+        const ativos = presencasRecentes.filter(p => p.ultimaVez >= trintaDiasAtras).map(p => p._id);
+        const setAtivos = new Set(ativos);
+
+        // 2. Todos que já fizeram Apometria na história
+        const todosApometria = await Atendimento.distinct('cpf_assistido', { tipo: 'apometria' });
+
+        // 3. Abandonos = Pessoas da Apometria que NÃO estão no set de ativos
+        const abandonosReais = todosApometria.filter(cpf => !setAtivos.has(cpf));
+
+        const totalBase = todosApometria.length;
+        const taxaAbandono = totalBase > 0 
+            ? ((abandonosReais.length / totalBase) * 100).toFixed(1) 
             : 0;
-            
         // 3. Mapeamento Geral
         const mapaGeral = {
             "Apometria": ["apometria"],
