@@ -39,7 +39,7 @@ const dados = req.body;
             limiteEspera = configLimite.limite_espera || 0;
         } else {
             console.log("⚠️ Nenhuma configuração encontrada no banco. Usando padrão zero.");
-            limitePrincipal = 2; 
+            limitePrincipal = 8; 
         }
         const limiteTotal = limitePrincipal + limiteEspera;
 
