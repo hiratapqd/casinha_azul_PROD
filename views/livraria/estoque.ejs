@@ -36,9 +36,21 @@
         </div>
     </div>
 
-    <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
-        <a href="/livraria/cadastro" class="btn-atender btn-success" style="background-color: #28a745;">+ Cadastrar Novo Livro</a>
-    </div>
+    <div class="card" style="margin-bottom: 20px; padding: 15px;">
+        <div style="display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 300px; position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 15px; color: #1277bb;"></i>
+                <input type="text" id="inputBusca" placeholder="Buscar por Título, Autor ou ISBN..." 
+                    style="width: 100%; padding: 12px 12px 12px 40px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
+            </div>
+
+            <a href="/livraria/cadastro" class="btn-atender btn-success" style="text-decoration: none; display: flex; align-items: center; gap: 8px; white-space: nowrap; height: 45px;">
+                <i class="fas fa-plus"></i> Cadastrar Novo Livro
+            </a>
+
+        </div>
+    </div>   
 
     <div class="card">
         <table>
@@ -113,41 +125,36 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-async function vender(isbn) {
-    const qtdInput = document.getElementById(`qtd-${isbn}`);
-    const qtd = qtdInput.value;
-    
-    if (!confirm(`Confirmar a venda de ${qtd} unidade(s)?`)) return;
+document.addEventListener('DOMContentLoaded', function() {
+    const inputBusca = document.getElementById('inputBusca');
 
-    try {
-        const response = await fetch('/livraria/venda-rapida', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isbn, qtd })
-        });
+    if (!inputBusca) return; // Segurança caso o ID mude
 
-        if (response.ok) {
-            Swal.fire({
-                title: 'Venda Realizada!',
-                icon: 'success',
-                timer: 1500,
-                showConfirmButton: false
-            }).then(() => { location.reload(); });
-        } else {
-            const data = await response.json();
-            alert(data.erro || "Estoque insuficiente.");
+function executarFiltro() {
+    const termo = inputBusca.value.toLowerCase().trim();
+    // Selecionamos todas as linhas do corpo da tabela, independente da classe
+    const linhas = document.querySelectorAll('table tbody tr'); 
+
+    linhas.forEach(linha => {
+        if (linha.cells.length > 1) {
+            const textoLinha = linha.innerText.toLowerCase();
+            const textoSemPontos = textoLinha.replace(/[\.\-\/]/g, "");
+            const termoSemPontos = termo.replace(/[\.\-\/]/g, "");
+
+            if (textoLinha.includes(termo) || textoSemPontos.includes(termoSemPontos)) {
+                linha.style.display = "";
+            } else {
+                linha.style.display = "none";
+            }
         }
-    } catch (error) {
-        alert("Erro ao conectar com o servidor.");
-    }
+    });
 }
 
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('sucesso')) {
-    Swal.fire({ title: 'Livro Salvo!', icon: 'success' });
-} else if (urlParams.has('atualizado')) {
-    Swal.fire({ title: 'Atualizado!', icon: 'success' });
-}
+    // Ouvintes de eventos para capturar qualquer mudança
+    inputBusca.addEventListener('keyup', executarFiltro);
+    inputBusca.addEventListener('input', executarFiltro); // Captura preenchimento automático
+    inputBusca.addEventListener('paste', () => setTimeout(executarFiltro, 100));
+    inputBusca.addEventListener('change', executarFiltro);
+});
 </script>
-
 <%- include('../partials/footer') %>
