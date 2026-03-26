@@ -63,7 +63,7 @@ exports.salvarAtendimento = async (req, res) => {
                     sendo_atendido: `Vindo do(a) ${dados.tipo}`
                 });
                 await novaFilaPasse.save();
-                console.log(`[Fluxo] Passe gerado para ${dados.nome_assistido} vindo de ${dados.tipo}`);
+                // console.log(`[Fluxo] Passe gerado para ${dados.nome_assistido} vindo de ${dados.tipo}`);
             }
         }
 
