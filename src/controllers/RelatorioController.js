@@ -140,7 +140,7 @@ exports.getApometriaInativos = async (req, res) => {
         data90.setDate(hoje.getDate() - 90);
         data90.setHours(23, 59, 59, 999);
 
-        const ultimosAtendimentos = await Atendimento.aggregate([
+/*         const ultimosAtendimentos = await Atendimento.aggregate([
             { $sort: { data: -1 } },
             { $group: {
                 _id: "$cpf_assistido",
@@ -152,6 +152,23 @@ exports.getApometriaInativos = async (req, res) => {
                 ultimoTipo: "apometria",
                 ultimaData: { $lte: data30 } 
             }}
+        ]); */
+
+        const ultimosAtendimentos = await Atendimento.aggregate([
+            {
+                $match: {
+                    // Agora consideramos AMBOS para saber se a pessoa abandonou a casa
+                    tipo: { $in: ["apometria", "passe"] } 
+                }
+            },
+            {
+                $group: {
+                    _id: "$cpf_assistido",
+                    nome: { $first: "$nome_assistido" },
+                    // Pegamos a data mais recente entre os dois tipos
+                    ultimaData: { $max: "$data" } 
+                }
+            }
         ]);
 
         const listas = { d30: [], d60: [], d90: [] };
