@@ -70,8 +70,10 @@
                 <% livros.forEach(livro => { %>
                 <tr>
                     <td>
-                        <img src="https://covers.openlibrary.org/b/isbn/<%= livro._id %>-S.jpg" 
-                             onerror="this.src='https://via.placeholder.com/40x60?text=N/A'" 
+                        <img src="https://covers.openlibrary.org/b/isbn/<%= livro._id %>-S.jpg"
+                             loading="lazy"
+                             referrerpolicy="no-referrer"
+                             onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;40&quot; height=&quot;60&quot; viewBox=&quot;0 0 40 60&quot;><rect width=&quot;40&quot; height=&quot;60&quot; fill=&quot;%23f1f3f5&quot;/><text x=&quot;20&quot; y=&quot;32&quot; font-size=&quot;10&quot; text-anchor=&quot;middle&quot; fill=&quot;%23666&quot; font-family=&quot;Arial&quot;>N/A</text></svg>'"
                              width="40" style="border-radius: 4px;">
                     </td>
                     
@@ -153,7 +155,9 @@ async function vender(isbn, estoqueMinimo) {
         badgeEstoque.className = `status-badge ${resultado.novoEstoque <= estoqueMinimo ? 'alerta' : 'atendimento'}`;
         inputQtd.value = 1;
 
-        Swal.fire('Sucesso', 'Venda registrada com sucesso.', 'success');
+        Swal.fire('Sucesso', 'Venda registrada com sucesso.', 'success').then(() => {
+            window.location.href = '/livraria/estoque';
+        });
     } catch (error) {
         Swal.fire('Erro', 'Falha ao processar a venda.', 'error');
     }
