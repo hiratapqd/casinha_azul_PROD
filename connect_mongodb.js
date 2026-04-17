@@ -1,6 +1,7 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
 
-const uri = "mongodb+srv://casinhaazul_db_user:bmoaemzDb1pJgqi3@casinhaazulclr.46cdvel.mongodb.net/casinha_azul?retryWrites=true&w=majority";
+//const uri = "mongodb+srv://casinhaazul_db_user:bmoaemzDb1pJgqi3@casinhaazulclr.46cdvel.mongodb.net/casinha_azul?retryWrites=true&w=majority";
+const uri = "mongodb+srv://casinhaazul_db_user:5K7xAP5cI4RJUGLX@casinhaazulclr.46cdvel.mongodb.net/casinha_azul?appName=casinha_azul";
 
 const client = new MongoClient(uri, {
   serverApi: {

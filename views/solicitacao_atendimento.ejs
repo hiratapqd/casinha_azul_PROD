@@ -107,6 +107,7 @@
         <thead>
             <tr>
                 <th>Data</th>
+                <th>Voluntário</th>
                 <th>Queixa</th>
                 <th>Status</th>
             </tr>
@@ -131,7 +132,7 @@ document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
             container.style.display = 'block';
             historico.forEach(h => {
                 const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
-                tbody.innerHTML += `<tr><td>${data}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${data}</td><td>${h.voluntario || '-'}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
             });
         }
 

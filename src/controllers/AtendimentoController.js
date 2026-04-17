@@ -1,25 +1,35 @@
 const Atendimento = require('../models/Atendimento');
 const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
-const ConfiguracaoFluxo = require('../models/ConfiguracaoFluxo'); 
+const ConfiguracaoFluxo = require('../models/ConfiguracaoFluxo');
+
+function normalizarCpf(cpf = '') {
+    return String(cpf).replace(/\D/g, '');
+}
+
+function criarRegexCpfFlexivel(cpf = '') {
+    const cpfLimpo = normalizarCpf(cpf);
+    if (!cpfLimpo) return null;
+
+    return new RegExp(`^\\D*${cpfLimpo.split('').join('\\D*')}\\D*$`);
+}
 
 exports.getDadosIniciais = async (req, res) => {
     try {
-        const cpf = req.params.cpf;
-        
-        // Busca pelo _id ou pelo campo cpf_assistido
+        const cpf = normalizarCpf(req.params.cpf);
+
         let assistido = await Assistido.findById(cpf).lean();
         if (!assistido) {
             assistido = await Assistido.findOne({ cpf_assistido: cpf }).lean();
         }
-        
+
         if (!assistido) {
             return res.status(404).json(null);
         }
 
         res.json(assistido);
     } catch (err) {
-        console.error("Erro ao buscar assistido:", err);
+        console.error('Erro ao buscar assistido:', err);
         res.status(500).json(null);
     }
 };
@@ -27,29 +37,41 @@ exports.getDadosIniciais = async (req, res) => {
 exports.salvarAtendimento = async (req, res) => {
     try {
         const dados = req.body;
+        const cpfAssistido = normalizarCpf(dados.cpf_assistido);
         const hoje = new Date().toISOString().split('T')[0];
-        const idSolicitacaoAtual = dados.idSolicitacao || `${dados.cpf_assistido}_${hoje}`;
+        const idSolicitacaoAtual = dados.idSolicitacao || `${cpfAssistido}_${hoje}`;
 
-        // 1. Grava o histórico do atendimento atual
         const novoAtendimento = new Atendimento({
             data: new Date(),
-            cpf_assistido: dados.cpf_assistido,
+            cpf_assistido: cpfAssistido,
             nome_assistido: dados.nome_assistido,
             voluntario: dados.voluntario,
             observacoes: dados.observacoes,
-            tipo: dados.tipo 
+            tipo: dados.tipo
         });
         await novoAtendimento.save();
 
-        // 2. Marca a solicitação da terapia atual como 'Atendido'
-        await Solicitacao.findByIdAndUpdate(idSolicitacaoAtual, { status: 'Atendido' });
+        const solicitacaoAtualizada = await Solicitacao.findByIdAndUpdate(
+            idSolicitacaoAtual,
+            { status: 'Atendido' },
+            { new: true }
+        );
 
-        // 3. Lógica de Fluxo Dinâmica (Passe automático)
+        if (!solicitacaoAtualizada) {
+            await Solicitacao.findOneAndUpdate(
+                {
+                    tipo: dados.tipo,
+                    _id: new RegExp(`^${cpfAssistido}(?:_${dados.tipo})?_${hoje}$`)
+                },
+                { status: 'Atendido' }
+            );
+        }
+
         const config = await ConfiguracaoFluxo.findOne({ terapia: dados.tipo });
 
         if (config && config.geraPasseAoFinalizar) {
             const dataLocal = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-            const idPasse = `${dados.cpf_assistido}_passe_${dataLocal}`;
+            const idPasse = `${cpfAssistido}_passe_${dataLocal}`;
 
             const jaTemPasse = await Solicitacao.findById(idPasse);
 
@@ -57,37 +79,52 @@ exports.salvarAtendimento = async (req, res) => {
                 const novaFilaPasse = new Solicitacao({
                     _id: idPasse,
                     nome_assistido: dados.nome_assistido,
-                    tipo: "passe",
-                    status: "Confirmado",
+                    tipo: 'passe',
+                    status: 'Confirmado',
                     data_pedido: new Date(),
                     sendo_atendido: `Vindo do(a) ${dados.tipo}`
                 });
                 await novaFilaPasse.save();
-                // console.log(`[Fluxo] Passe gerado para ${dados.nome_assistido} vindo de ${dados.tipo}`);
             }
         }
 
         res.status(200).json({ status: 'sucesso' });
     } catch (err) {
-        console.error("Erro ao salvar atendimento:", err);
+        console.error('Erro ao salvar atendimento:', err);
         res.status(500).json({ status: 'erro', mensagem: err.message });
     }
 };
 
-    // Busca histórico específico para a tabela inferior
-    exports.getHistoricoPorTipo = async (req, res) => {
-        try {
-            const { tipo, cpf } = req.params;
-            const historico = await Atendimento.find({ cpf_assistido: cpf, tipo: tipo }).sort({ data: -1 }).lean();
-            
-            const hoje = new Date().toISOString().split('T')[0];
-            const solicitacao = await Solicitacao.findById(`${cpf}_${hoje}`).lean();
+exports.getHistoricoPorTipo = async (req, res) => {
+    try {
+        const { tipo } = req.params;
+        const cpf = normalizarCpf(req.params.cpf);
+        const cpfRegex = criarRegexCpfFlexivel(cpf);
 
-            res.json({
-                historico: historico,
-                queixa_atual: solicitacao ? solicitacao.queixa_motivo : ""
-            });
-        } catch (err) {
-            res.status(500).json({ historico: [], queixa_atual: "" });
-        }
-    };
+        const historico = await Atendimento.find({
+            tipo,
+            $or: [
+                { cpf_assistido: cpf },
+                ...(cpfRegex ? [{ cpf_assistido: cpfRegex }] : [])
+            ]
+        })
+            .sort({ data: -1 })
+            .lean();
+
+        console.log(`[Historico] tipo=${tipo} cpf=${cpf} encontrados=${historico.length}`);
+
+        const hoje = new Date().toISOString().split('T')[0];
+        const solicitacao = await Solicitacao.findOne({
+            tipo,
+            _id: new RegExp(`^${cpf}(?:_${tipo})?_${hoje}$`)
+        }).lean();
+
+        res.json({
+            historico,
+            queixa_atual: solicitacao ? solicitacao.queixa_motivo : ''
+        });
+    } catch (err) {
+        console.error('Erro ao buscar historico por tipo:', err);
+        res.status(500).json({ historico: [], queixa_atual: '' });
+    }
+};
