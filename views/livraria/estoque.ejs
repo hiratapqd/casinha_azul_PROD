@@ -87,7 +87,7 @@
                     </td>
 
                     <td>
-                        <span class="status-badge <%= livro.estoque_atual <= (livro.estoque_minimo || 2) ? 'alerta' : 'atendimento' %>">
+                        <span id="estoque-<%= livro._id %>" class="status-badge <%= livro.estoque_atual <= (livro.estoque_minimo || 2) ? 'alerta' : 'atendimento' %>">
                             <%= livro.estoque_atual %> un
                         </span>
                     </td>
@@ -109,7 +109,7 @@
                             <a href="/livraria/editar/<%= livro._id %>" class="muted">Editar</a>
                             <div style="display: flex; gap: 5px; align-items: center; border-left: 1px solid #ddd; padding-left: 10px;">
                                 <input type="number" id="qtd-<%= livro._id %>" value="1" min="1" style="width: 40px; text-align: center;">
-                                <button onclick="vender('<%= livro._id %>')" class="btn-atender btn-success" style="background-color: #28a745; padding: 5px 10px; font-size: 12px;">
+                                <button type="button" onclick="vender('<%= livro._id %>', <%= livro.estoque_minimo || 2 %>)" class="btn-atender btn-success" style="background-color: #28a745; padding: 5px 10px; font-size: 12px;">
                                     Vender
                                 </button>
                             </div>
@@ -125,6 +125,40 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+async function vender(isbn, estoqueMinimo) {
+    const inputQtd = document.getElementById(`qtd-${isbn}`);
+    const badgeEstoque = document.getElementById(`estoque-${isbn}`);
+    const qtd = parseInt(inputQtd.value, 10);
+
+    if (!qtd || qtd < 1) {
+        Swal.fire('Atenção', 'Informe uma quantidade válida para venda.', 'warning');
+        return;
+    }
+
+    try {
+        const response = await fetch('/livraria/venda-rapida', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isbn, qtd })
+        });
+
+        const resultado = await response.json();
+
+        if (!response.ok || !resultado.sucesso) {
+            Swal.fire('Erro', resultado.erro || 'Não foi possível processar a venda.', 'error');
+            return;
+        }
+
+        badgeEstoque.textContent = `${resultado.novoEstoque} un`;
+        badgeEstoque.className = `status-badge ${resultado.novoEstoque <= estoqueMinimo ? 'alerta' : 'atendimento'}`;
+        inputQtd.value = 1;
+
+        Swal.fire('Sucesso', 'Venda registrada com sucesso.', 'success');
+    } catch (error) {
+        Swal.fire('Erro', 'Falha ao processar a venda.', 'error');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const inputBusca = document.getElementById('inputBusca');
 

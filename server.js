@@ -60,5 +60,5 @@ app.use('/', indexRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-    console.log(`📡 Ambiente: ${process.env.NODE_ENV || 'Development'}`);
+    console.log(`📡 Ambiente: ${process.env.NODE_ENV || 'Production'}`);
 });
