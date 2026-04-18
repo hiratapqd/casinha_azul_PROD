@@ -86,7 +86,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
             if (dataSolicitacao < dataLiberacao) {
                 return res.json({
                     status: 'bloqueado_intervalo',
-                    mensagem: `Nova apometria liberada apenas a partir de ${dataLiberacao.toLocaleDateString('pt-BR')}.`
+                    mensagem: `Pelo intervalo desde o ultimo ciclo de atendimento, uma nova apometria está liberada apenas a partir de ${dataLiberacao.toLocaleDateString('pt-BR')}.`
                 });
             }
         }
@@ -244,3 +244,4 @@ exports.cancelarSolicitacao = async (req, res) => {
         res.status(500).send('Erro ao processar o cancelamento.');
     }
 };
+
