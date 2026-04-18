@@ -79,6 +79,15 @@
         return normalizarCpf(valor).length === 11;
     }
 
+    async function buscarAssistidoPorCpf(cpf) {
+        const resposta = await fetch(`/api/dados-assistido/${cpf}`);
+        if (!resposta.ok) {
+            return null;
+        }
+
+        return resposta.json();
+    }
+
     function calcularIdade(dataNasc) {
         if (!dataNasc) return '';
         const hoje = new Date();
@@ -116,15 +125,20 @@
         document.getElementById('idSolicitacao').value = `${cpf}_${dataHoje}`;
 
         try {
-            const respA = await fetch(`/api/dados-assistido/${cpf}`);
-            if (respA.ok) {
-                const assistido = await respA.json();
-                if (assistido) {
-                    document.getElementById('campo_nome').value = assistido.nome_assistido || '';
-                    document.getElementById('campo_religiao').value = assistido.religiao_assistido || '';
-                    document.getElementById('campo_idade').value = calcularIdade(assistido.data_nascimento_assistido);
-                }
+            const assistido = await buscarAssistidoPorCpf(cpf);
+            if (!assistido) {
+                document.getElementById('campo_nome').value = '';
+                document.getElementById('campo_religiao').value = '';
+                document.getElementById('campo_idade').value = '';
+                renderizarTabela([]);
+                await Swal.fire('Assistido nao encontrado', 'Este CPF ainda nao esta cadastrado. Faca o cadastro antes de registrar o atendimento.', 'warning');
+                campoCpf.focus();
+                return;
             }
+
+            document.getElementById('campo_nome').value = assistido.nome_assistido || '';
+            document.getElementById('campo_religiao').value = assistido.religiao_assistido || '';
+            document.getElementById('campo_idade').value = calcularIdade(assistido.data_nascimento_assistido);
 
             const respB = await fetch(`/api/historico/apometria/${cpf}`);
             if (respB.ok) {
@@ -158,6 +172,14 @@
         btn.disabled = true;
 
         try {
+            const assistido = await buscarAssistidoPorCpf(normalizarCpf(campoCpf.value));
+            if (!assistido) {
+                await Swal.fire('Assistido nao encontrado', 'Este CPF ainda nao esta cadastrado. Faca o cadastro antes de finalizar o atendimento.', 'warning');
+                campoCpf.focus();
+                btn.disabled = false;
+                return;
+            }
+
             const formData = new URLSearchParams(new FormData(e.target));
             const resp = await fetch(e.target.action, {
                 method: 'POST',
@@ -169,10 +191,11 @@
                 await Swal.fire('Sucesso', 'Atendimento salvo e encaminhado para o Passe!', 'success');
                 window.location.href = '/fila-atendimento';
             } else {
-                throw new Error();
+                const erro = await resp.json().catch(() => null);
+                throw new Error(erro?.mensagem || 'Falha ao salvar atendimento.');
             }
         } catch (err) {
-            Swal.fire('Erro', 'Falha ao salvar atendimento.', 'error');
+            Swal.fire('Erro', err.message || 'Falha ao salvar atendimento.', 'error');
             btn.disabled = false;
         }
     });

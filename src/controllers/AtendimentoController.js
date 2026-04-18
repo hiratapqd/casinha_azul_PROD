@@ -40,11 +40,20 @@ exports.salvarAtendimento = async (req, res) => {
         const cpfAssistido = normalizarCpf(dados.cpf_assistido);
         const hoje = new Date().toISOString().split('T')[0];
         const idSolicitacaoAtual = dados.idSolicitacao || `${cpfAssistido}_${hoje}`;
+        const assistido = await Assistido.findById(cpfAssistido).lean()
+            || await Assistido.findOne({ cpf_assistido: cpfAssistido }).lean();
+
+        if (!assistido) {
+            return res.status(400).json({
+                status: 'erro',
+                mensagem: 'O CPF informado nao possui cadastro de assistido.'
+            });
+        }
 
         const novoAtendimento = new Atendimento({
             data: new Date(),
             cpf_assistido: cpfAssistido,
-            nome_assistido: dados.nome_assistido,
+            nome_assistido: dados.nome_assistido || assistido.nome_assistido,
             voluntario: dados.voluntario,
             observacoes: dados.observacoes,
             tipo: dados.tipo

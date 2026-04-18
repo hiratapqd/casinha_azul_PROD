@@ -81,6 +81,15 @@
     return normalizarCpf(valor).length === 11;
   }
 
+  async function buscarAssistidoPorCpf(cpf) {
+    const resposta = await fetch(`/api/dados-assistido/${cpf}`);
+    if (!resposta.ok) {
+      return null;
+    }
+
+    return resposta.json();
+  }
+
   function renderizarTabela(lista) {
     const corpo = document.getElementById('tabela-corpo');
     if (!lista || lista.length === 0) {
@@ -113,10 +122,16 @@
     document.getElementById('idSolicitacao').value = `${cpf}_${formularioConfig.tipo}_${dataHoje}`;
 
     try {
-      const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
-      if (resDados) {
-        document.getElementById('campo_nome').value = resDados.nome_assistido || '';
+      const resDados = await buscarAssistidoPorCpf(cpf);
+      if (!resDados) {
+        document.getElementById('campo_nome').value = '';
+        renderizarTabela([]);
+        await Swal.fire('Assistido nao encontrado', 'Este CPF ainda nao esta cadastrado. Faca o cadastro antes de registrar o atendimento.', 'warning');
+        campoCpf.focus();
+        return;
       }
+
+      document.getElementById('campo_nome').value = resDados.nome_assistido || '';
 
       const resHist = await fetch(`/api/historico/${formularioConfig.tipo}/${cpf}`).then(r => r.json());
 
@@ -148,6 +163,14 @@
     btn.disabled = true;
 
     try {
+      const assistido = await buscarAssistidoPorCpf(normalizarCpf(campoCpf.value));
+      if (!assistido) {
+        await Swal.fire('Assistido nao encontrado', 'Este CPF ainda nao esta cadastrado. Faca o cadastro antes de finalizar o atendimento.', 'warning');
+        campoCpf.focus();
+        btn.disabled = false;
+        return;
+      }
+
       const body = new URLSearchParams(new FormData(e.target));
       const resp = await fetch(e.target.action, {
         method: 'POST',
@@ -156,7 +179,8 @@
       });
 
       if (!resp.ok) {
-        throw new Error();
+        const erro = await resp.json().catch(() => null);
+        throw new Error(erro?.mensagem || 'Falha ao salvar atendimento.');
       }
 
       await Swal.fire('Sucesso', formularioConfig.sucessoMensagem, 'success');
@@ -167,7 +191,7 @@
         window.location.href = formularioConfig.redirectAposSalvar;
       }
     } catch (err) {
-      Swal.fire('Erro', 'Falha ao salvar atendimento.', 'error');
+      Swal.fire('Erro', err.message || 'Falha ao salvar atendimento.', 'error');
       btn.disabled = false;
     }
   });
