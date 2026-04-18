@@ -8,32 +8,32 @@
         margin-bottom: 15px;
     }
     .form-row .form-group {
-        flex: 1; /* Faz os campos dividirem o espaço igualmente */
-        margin-bottom: 0; 
+        flex: 1;
+        margin-bottom: 0;
     }
 </style>
 
 <main class="hero">
-    <h1>Solicitação de Atendimento Apométrico</h1>
+    <h1>Solicitacao de Atendimento Apometrico</h1>
     <form action="/atendimento/solicitacao" method="POST" class="form-container">
         
         <div class="form-row">
             <div class="form-group">
                 <label for="data">Data do Atendimento:</label>
-                <input type="date" id="data" name="data" 
+                <input type="date" id="data" name="data"
                        value="<%= new Date().toLocaleDateString('en-CA') %>" required>
             </div>
         </div>
 
         <div class="form-row">
-            <div class="form-group"  style="flex: 1;">
+            <div class="form-group" style="flex: 1;">
                 <label for="cpf_assistido">CPF do Assistido:</label>
-                <input type="text" id="cpf_assistido" name="cpf_assistido" required>
+                <input type="text" id="cpf_assistido" name="cpf_assistido" required inputmode="numeric" maxlength="14">
             </div>
-            <div class="form-group"> <label for="nome">Nome de quem será atendido:</label>
+            <div class="form-group">
+                <label for="nome">Nome de quem sera atendido:</label>
                 <input type="text" id="nome" name="nome" required>
             </div>
-
         </div>
 
         <div class="form-row">
@@ -46,7 +46,7 @@
                 <input type="date" id="data_nascimento" name="data_nascimento">
             </div>
             <div class="form-group">
-                <label for="religiao">Religião:</label>
+                <label for="religiao">Religiao:</label>
                 <input type="text" id="religiao" name="religiao">
             </div>
         </div>
@@ -56,7 +56,7 @@
                 <label for="cidade">Cidade:</label>
                 <input type="text" id="cidade" name="cidade">
             </div>
-            <div class="form-group" style="flex: 2;" >
+            <div class="form-group" style="flex: 2;">
                 <label for="uf">UF:</label>
                 <input type="text" id="uf" name="uf" maxlength="2">
             </div>
@@ -72,20 +72,20 @@
                 <input type="tel" id="telefone" name="telefone">
             </div>
 
-            <div class="form-group"  style="flex: 3;">
+            <div class="form-group" style="flex: 3;">
                 <label for="atendimento_por">Sendo atendido pela:</label>
                 <select id="atendimento_por" name="atendimento_por">
                     <option value="Primeira vez" selected>Primeira vez</option>
-                    <option value="Segunda vez" >Segunda vez</option>
-                    <option value="Terceira vez" >Terceira vez</option>
-                    <option value="Quarta vez" >Quarta vez</option>
-                    <option value="Quinta vez" >Quinta vez</option>
-                    <option value="Já passei mais vezes" >Já passei mais vezes</option>
+                    <option value="Segunda vez">Segunda vez</option>
+                    <option value="Terceira vez">Terceira vez</option>
+                    <option value="Quarta vez">Quarta vez</option>
+                    <option value="Quinta vez">Quinta vez</option>
+                    <option value="Ja passei mais vezes">Ja passei mais vezes</option>
                 </select>
             </div>
         </div><br><br>
         <div class="form-group" style="flex: 1;">
-            <label for="queixa">Breve descrição da queixa/motivo:</label>
+            <label for="queixa">Breve descricao da queixa/motivo:</label>
             <textarea id="queixa" name="queixa" rows="3"></textarea>
         </div><br>
 
@@ -93,21 +93,21 @@
             <label for="subir_escada">Pode subir escada:</label>
             <select id="subir_escada" name="subir_escada">
                 <option value="Sim" selected>Sim</option>
-                <option value="Não">Não</option>
+                <option value="Nao">Nao</option>
             </select>
         </div><br><br>
 
         <button type="submit" id="btnRegistrar" class="btn-atender btn-success" <%= typeof bloqueado !== 'undefined' && bloqueado ? 'disabled' : '' %>>
-            <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitação' %>
+            <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitacao' %>
         </button>
     </form>
     <div id="historico-container" style="margin-top: 20px; display: none;">
-    <h3>Últimos Atendimentos</h3>
+    <h3>Ultimos Atendimentos</h3>
     <table id="tabela-historico" class="form-container">
         <thead>
             <tr>
                 <th>Data</th>
-                <th>Voluntário</th>
+                <th>Voluntario</th>
                 <th>Queixa</th>
                 <th>Status</th>
             </tr>
@@ -116,55 +116,63 @@
     </table>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // Lógica para buscar histórico ao digitar o CPF
+function normalizarCpf(valor) {
+    return (valor || '').replace(/\D/g, '');
+}
+
+function cpfTem11Digitos(valor) {
+    return normalizarCpf(valor).length === 11;
+}
+
 document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
-    const cpf = e.target.value.replace(/\D/g, ''); // Remove pontos/traços
-    if (cpf.length >= 11) {
-        // 1. BUSCA O HISTÓRICO (Já estava funcionando)
-        const respHist = await fetch(`/atendimento/historico/${cpf}`);
-        const historico = await respHist.json();
-        
-        const container = document.getElementById('historico-container');
-        const tbody = document.querySelector('#tabela-historico tbody');
-        tbody.innerHTML = '';
-        if (historico.length > 0) {
-            container.style.display = 'block';
-            historico.forEach(h => {
-                const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
-                tbody.innerHTML += `<tr><td>${data}</td><td>${h.voluntario || '-'}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
-            });
+    const cpf = normalizarCpf(e.target.value);
+    if (!cpfTem11Digitos(cpf)) {
+        if (cpf.length > 0) {
+            await Swal.fire('CPF incompleto', 'Informe um CPF com 11 digitos.', 'warning');
         }
+        return;
+    }
 
-        // 2. BUSCA DADOS DO ASSISTIDO (Para preencher os campos)
-        const respDados = await fetch(`/api/dados-assistido/${cpf}`);
-        if (respDados.ok) {
-            const assistido = await respDados.json();
-            // console.log("Dados recebidos:", assistido); // Para você conferir no F12
+    const respHist = await fetch(`/atendimento/historico/${cpf}`);
+    const historico = await respHist.json();
 
-            if (assistido) {
-                // CORREÇÃO DOS NOMES DOS CAMPOS (Adicionando _assistido)
-                document.getElementById('nome').value = assistido.nome_assistido || '';
-                document.getElementById('sexo').value = assistido.sexo_assistido || '';
-                document.getElementById('religiao').value = assistido.religiao_assistido || '';
-                document.getElementById('cidade').value = assistido.cidade_assistido || '';
-                document.getElementById('uf').value = assistido.uf_assistido || '';
-                document.getElementById('email').value = assistido.email_assistido || '';
-                document.getElementById('telefone').value = assistido.telefone_assistido || '';
-                
-                if (assistido.data_nascimento_assistido) {
-                    // Formata a data para o input date (YYYY-MM-DD)
-                    const dataIso = new Date(assistido.data_nascimento_assistido).toISOString().split('T')[0];
-                    document.getElementById('data_nascimento').value = dataIso;
-                }
+    const container = document.getElementById('historico-container');
+    const tbody = document.querySelector('#tabela-historico tbody');
+    tbody.innerHTML = '';
+
+    if (historico.length > 0) {
+        container.style.display = 'block';
+        historico.forEach(h => {
+            const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
+            tbody.innerHTML += `<tr><td>${data}</td><td>${h.voluntario || '-'}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
+        });
+    } else {
+        container.style.display = 'none';
+    }
+
+    const respDados = await fetch(`/api/dados-assistido/${cpf}`);
+    if (respDados.ok) {
+        const assistido = await respDados.json();
+
+        if (assistido) {
+            document.getElementById('nome').value = assistido.nome_assistido || '';
+            document.getElementById('sexo').value = assistido.sexo_assistido || '';
+            document.getElementById('religiao').value = assistido.religiao_assistido || '';
+            document.getElementById('cidade').value = assistido.cidade_assistido || '';
+            document.getElementById('uf').value = assistido.uf_assistido || '';
+            document.getElementById('email').value = assistido.email_assistido || '';
+            document.getElementById('telefone').value = assistido.telefone_assistido || '';
+
+            if (assistido.data_nascimento_assistido) {
+                const dataIso = new Date(assistido.data_nascimento_assistido).toISOString().split('T')[0];
+                document.getElementById('data_nascimento').value = dataIso;
             }
         }
     }
 });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -172,12 +180,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (form) {
         form.addEventListener('submit', async function(e) {
-            e.preventDefault(); // 🛑 Bloqueia o recarregamento da página
-            
-            // console.log("Iniciando envio do formulário..."); // Teste de clique
+            e.preventDefault();
 
             const formData = new FormData(form);
             const dados = Object.fromEntries(formData.entries());
+
+            if (!cpfTem11Digitos(dados.cpf_assistido)) {
+                await Swal.fire('CPF invalido', 'Informe um CPF com 11 digitos antes de registrar a solicitacao.', 'warning');
+                document.getElementById('cpf_assistido').focus();
+                return;
+            }
 
             try {
                 const response = await fetch('/atendimento/solicitacao', {
@@ -187,26 +199,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 const resultado = await response.json();
-                // console.log("Resposta do servidor:", resultado);
 
                 if (resultado.status === 'sucesso') {
                     Swal.fire({
-                        title: resultado.posicao <= resultado.limite ? '✅ Confirmado!' : '⏳ Lista de Espera',
-                        text: `Posição: ${resultado.posicao}`,
+                        title: resultado.posicao <= resultado.limite ? 'Confirmado!' : 'Lista de Espera',
+                        text: `Posicao: ${resultado.posicao}`,
                         icon: 'success'
                     }).then(() => {
                         window.location.reload();
                     });
                 } else {
-                    Swal.fire('Atenção', resultado.mensagem, 'warning');
+                    Swal.fire('Atencao', resultado.mensagem, 'warning');
                 }
             } catch (error) {
-                console.error("Erro técnico:", error);
-                Swal.fire('Erro', 'Não foi possível falar com o servidor.', 'error');
+                console.error('Erro tecnico:', error);
+                Swal.fire('Erro', 'Nao foi possivel falar com o servidor.', 'error');
             }
         });
     } else {
-        console.error("Formulário não encontrado!");
+        console.error('Formulario nao encontrado!');
     }
 });
 </script>

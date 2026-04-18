@@ -15,7 +15,7 @@
             </div>
             <div class="form-group flex-2">
                 <label>CPF:</label>
-                <input type="text" id="cpf_assistido" name="cpf_assistido" placeholder="Apenas números" required autocomplete="off">
+                <input type="text" id="cpf_assistido" name="cpf_assistido" placeholder="Apenas numeros" required autocomplete="off" inputmode="numeric" maxlength="14">
             </div>
         </div>
 
@@ -29,34 +29,34 @@
                 <input type="text" name="idade_assistido" id="campo_idade">
             </div>
             <div class="form-group">
-                <label>Religião:</label>
+                <label>Religiao:</label>
                 <input type="text" name="religiao_assistido" id="campo_religiao">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Terapeuta Responsável:</label>
+                <label>Terapeuta Responsavel:</label>
                 <input type="text" name="voluntario" id="voluntario" required>
             </div>
         </div>
 
         <div class="form-group">
-            <label>Evolução do Atendimento:</label>
+            <label>Evolucao do Atendimento:</label>
             <textarea name="observacoes" id="descricao_atendimento" rows="5" required></textarea>
         </div>
         <br><br>
         <button type="submit" class="btn-atender btn-success">Finalizar Atendimento</button>
-    </form><br><br>    
+    </form><br><br>
 
     <hr>
-    <h3>Histórico de Atendimentos</h3>
+    <h3>Historico de Atendimentos</h3>
     <table class="table-historico">
         <thead>
             <tr>
                 <th>Data</th>
                 <th>Terapeuta</th>
-                <th>Observação</th>
+                <th>Observacao</th>
             </tr>
         </thead>
         <tbody id="tabela-corpo">
@@ -67,9 +67,17 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // 1. Configuração de Data (Formato ISO para o MongoDB)
     const dataHoje = new Date().toISOString().split('T')[0];
     document.getElementById('campo_data').value = dataHoje;
+    const campoCpf = document.getElementById('cpf_assistido');
+
+    function normalizarCpf(valor) {
+        return (valor || '').replace(/\D/g, '');
+    }
+
+    function cpfTem11Digitos(valor) {
+        return normalizarCpf(valor).length === 11;
+    }
 
     function calcularIdade(dataNasc) {
         if (!dataNasc) return '';
@@ -84,7 +92,7 @@
     function renderizarTabela(lista) {
         const corpo = document.getElementById('tabela-corpo');
         if (!lista || lista.length === 0) {
-            corpo.innerHTML = '<tr><td colspan="3">Nenhum histórico encontrado.</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="3">Nenhum historico encontrado.</td></tr>';
             return;
         }
         corpo.innerHTML = lista.map(item => `
@@ -96,51 +104,57 @@
         `).join('');
     }
 
-    // 2. Busca de Dados, Queixa e Histórico
-    document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
-        const cpf = e.target.value.replace(/\D/g, '');
-        if (cpf.length === 11) {
-            // Define o ID da solicitação para o Controller dar baixa
-            document.getElementById('idSolicitacao').value = `${cpf}_${dataHoje}`;
-
-            try {
-                // Busca Dados do Assistido
-                const respA = await fetch(`/api/dados-assistido/${cpf}`);
-                if (respA.ok) {
-                    const assistido = await respA.json();
-                    if (assistido) {
-                        document.getElementById('campo_nome').value = assistido.nome_assistido || '';
-                        document.getElementById('campo_religiao').value = assistido.religiao_assistido || '';
-                        document.getElementById('campo_idade').value = calcularIdade(assistido.data_nascimento_assistido);
-                    }
-                }
-
-                // Busca Histórico e Queixa Atual
-                const respB = await fetch(`/api/historico/apometria/${cpf}`);
-                if (respB.ok) {
-                    const dataRes = await respB.json();
-                    
-                    // CORREÇÃO: Usando 'queixa_atual' conforme AtendimentoController.js
-                    if (dataRes.queixa_atual) {
-                        const campoObs = document.getElementById('descricao_atendimento');
-                        const textoQueixa = `RELATO NA TRIAGEM:\n${dataRes.queixa_atual}\n-----------------------------\nORIENTAÇÕES:\n`;
-                        
-                        if (campoObs.value.trim() === "") {
-                            campoObs.value = textoQueixa;
-                        }
-                    }
-                    renderizarTabela(dataRes.historico || []);
-                }
-            } catch (err) {
-                console.error("Erro na busca:", err);
+    campoCpf.addEventListener('blur', async (e) => {
+        const cpf = normalizarCpf(e.target.value);
+        if (!cpfTem11Digitos(cpf)) {
+            if (cpf.length > 0) {
+                await Swal.fire('CPF incompleto', 'Informe um CPF com 11 digitos.', 'warning');
             }
+            return;
+        }
+
+        document.getElementById('idSolicitacao').value = `${cpf}_${dataHoje}`;
+
+        try {
+            const respA = await fetch(`/api/dados-assistido/${cpf}`);
+            if (respA.ok) {
+                const assistido = await respA.json();
+                if (assistido) {
+                    document.getElementById('campo_nome').value = assistido.nome_assistido || '';
+                    document.getElementById('campo_religiao').value = assistido.religiao_assistido || '';
+                    document.getElementById('campo_idade').value = calcularIdade(assistido.data_nascimento_assistido);
+                }
+            }
+
+            const respB = await fetch(`/api/historico/apometria/${cpf}`);
+            if (respB.ok) {
+                const dataRes = await respB.json();
+
+                if (dataRes.queixa_atual) {
+                    const campoObs = document.getElementById('descricao_atendimento');
+                    const textoQueixa = `RELATO NA TRIAGEM:\n${dataRes.queixa_atual}\n-----------------------------\nORIENTACOES:\n`;
+
+                    if (campoObs.value.trim() === '') {
+                        campoObs.value = textoQueixa;
+                    }
+                }
+                renderizarTabela(dataRes.historico || []);
+            }
+        } catch (err) {
+            console.error('Erro na busca:', err);
         }
     });
 
-    // 3. Envio do Formulário
     document.getElementById('atendimentoForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = e.target.querySelector('button');
+
+        if (!cpfTem11Digitos(campoCpf.value)) {
+            await Swal.fire('CPF invalido', 'Informe um CPF com 11 digitos antes de finalizar.', 'warning');
+            campoCpf.focus();
+            return;
+        }
+
         btn.disabled = true;
 
         try {

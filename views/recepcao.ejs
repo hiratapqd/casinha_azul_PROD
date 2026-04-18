@@ -7,7 +7,7 @@
     <div class="form-container">
         <div class="form-group">
             <label>Digite o CPF do Assistido:</label>
-            <input type="text" id="busca_cpf" placeholder="000.000.000-00" autofocus>
+            <input type="text" id="busca_cpf" placeholder="000.000.000-00" autofocus inputmode="numeric" maxlength="14">
         </div>
 
         <div id="area_registro" style="display: none; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 20px;">
@@ -22,24 +22,19 @@
                 <label><strong>Selecione as terapias para hoje:</strong></label>
                 <div class="checkbox-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0;">
                     <% configs.forEach(regra => { %>
-                        <% 
-                        // 1. Pegamos o nome original do banco
+                        <%
                         let valorOriginal = regra.terapia;
-                        
-                        // 2. Criamos uma versão padronizada para o "value" do checkbox
-                        // Removemos acentos e trocamos espaços por underscores
                         let valorProcessado = valorOriginal
                                 .toLowerCase()
-                                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos (Mãos -> maos)
-                                .replace(/\s+/g, '_'); // Troca espaços por _
+                                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                                .replace(/\s+/g, '_');
 
-                        // 3. Filtro para não mostrar a apometria na recepção
-                        if(valorProcessado !== 'apometria') { 
+                        if (valorProcessado !== 'apometria') {
                         %>
                             <div style="padding: 10px; border: 1px solid #eee; border-radius: 5px;">
-                                <input type="checkbox" 
-                                    name="terapias" 
-                                    value="<%= valorProcessado %>" 
+                                <input type="checkbox"
+                                    name="terapias"
+                                    value="<%= valorProcessado %>"
                                     id="chk_<%= valorProcessado %>">
                                 <label for="chk_<%= valorProcessado %>" style="text-transform: capitalize;">
                                     <%= valorOriginal %>
@@ -68,26 +63,40 @@
     const buscaCpf = document.getElementById('busca_cpf');
     const areaRegistro = document.getElementById('area_registro');
 
-    // Busca automática ao digitar o CPF completo
+    function normalizarCpf(valor) {
+        return (valor || '').replace(/\D/g, '');
+    }
+
+    function cpfTem11Digitos(valor) {
+        return normalizarCpf(valor).length === 11;
+    }
+
     buscaCpf.addEventListener('input', async (e) => {
-        const cpf = e.target.value.replace(/\D/g, '');
-        if (cpf.length === 11) {
+        const cpf = normalizarCpf(e.target.value);
+
+        if (cpf.length > 0 && cpf.length < 11) {
+            areaRegistro.style.display = 'none';
+        }
+
+        if (cpfTem11Digitos(cpf)) {
             try {
                 const res = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
                 if (res) {
                     document.getElementById('nome_assistido_display').innerText = res.nome_assistido;
                     document.getElementById('hidden_cpf').value = cpf;
                     document.getElementById('hidden_nome').value = res.nome_assistido;
-                    document.getElementById('info_extra').innerText = `Religião: ${res.religiao_assistido || 'Não informada'}`;
+                    document.getElementById('info_extra').innerText = `Religiao: ${res.religiao_assistido || 'Nao informada'}`;
                     areaRegistro.style.display = 'block';
                 } else {
-                    Swal.fire('Não encontrado', 'Assistido não cadastrado. Deseja cadastrar?', 'question');
+                    areaRegistro.style.display = 'none';
+                    Swal.fire('Nao encontrado', 'Assistido nao cadastrado. Deseja cadastrar?', 'question');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+            }
         }
     });
 
-    // Envio das solicitações para a fila
     document.getElementById('formCheckin').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -98,8 +107,12 @@
             terapias: formData.getAll('terapias')
         };
 
+        if (!cpfTem11Digitos(data.cpf)) {
+            return Swal.fire('CPF invalido', 'Informe um CPF com 11 digitos antes de enviar para a fila.', 'warning');
+        }
+
         if (data.terapias.length === 0) {
-            return Swal.fire('Atenção', 'Selecione pelo menos uma terapia!', 'warning');
+            return Swal.fire('Atencao', 'Selecione pelo menos uma terapia!', 'warning');
         }
 
         try {
