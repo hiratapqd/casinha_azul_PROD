@@ -70,6 +70,8 @@
     const dataHoje = new Date().toISOString().split('T')[0];
     document.getElementById('campo_data').value = dataHoje;
     const campoCpf = document.getElementById('cpf_assistido');
+    let ultimoCpfSemCadastroAlertado = '';
+    let ultimoCpfIncompletoAlertado = '';
 
     function normalizarCpf(valor) {
         return (valor || '').replace(/\D/g, '');
@@ -116,11 +118,15 @@
     campoCpf.addEventListener('blur', async (e) => {
         const cpf = normalizarCpf(e.target.value);
         if (!cpfTem11Digitos(cpf)) {
-            if (cpf.length > 0) {
+            if (cpf.length > 0 && ultimoCpfIncompletoAlertado !== cpf) {
+                ultimoCpfIncompletoAlertado = cpf;
                 await Swal.fire('CPF incompleto', 'Informe um CPF com 11 digitos.', 'warning');
             }
             return;
         }
+
+        ultimoCpfIncompletoAlertado = '';
+        ultimoCpfSemCadastroAlertado = '';
 
         document.getElementById('idSolicitacao').value = `${cpf}_${dataHoje}`;
 
@@ -131,11 +137,14 @@
                 document.getElementById('campo_religiao').value = '';
                 document.getElementById('campo_idade').value = '';
                 renderizarTabela([]);
-                await Swal.fire('Assistido nao encontrado', 'Este CPF ainda nao esta cadastrado. Faca o cadastro antes de registrar o atendimento.', 'warning');
-                campoCpf.focus();
+                if (ultimoCpfSemCadastroAlertado !== cpf) {
+                    ultimoCpfSemCadastroAlertado = cpf;
+                    await Swal.fire('Assistido não encontrado', 'Este CPF ainda não está cadastrado. Faça o cadastro antes de registrar o atendimento.', 'warning');
+                }
                 return;
             }
 
+            ultimoCpfSemCadastroAlertado = '';
             document.getElementById('campo_nome').value = assistido.nome_assistido || '';
             document.getElementById('campo_religiao').value = assistido.religiao_assistido || '';
             document.getElementById('campo_idade').value = calcularIdade(assistido.data_nascimento_assistido);
@@ -180,6 +189,7 @@
                 return;
             }
 
+            ultimoCpfSemCadastroAlertado = '';
             const formData = new URLSearchParams(new FormData(e.target));
             const resp = await fetch(e.target.action, {
                 method: 'POST',
