@@ -107,6 +107,7 @@ router.get('/cadastro_mediuns', (req, res) => res.render('cadastro_mediuns'));
 router.post('/medium/novo', voluntarioController.criarVoluntario);
 router.get('/visualizar_voluntarios', voluntarioController.getVisualizarVoluntarios);
 router.get('/relatorios/relatorio-voluntarios', relatorioController.getRelatorioVoluntarios);
+router.get('/relatorios/relatorio-voluntarios-inativos', relatorioController.getVoluntariosInativos);
 
 // --- ROTAS DE ATENDIMENTO ---
 router.get('/solicitacao_atendimento', (req, res) => res.render('solicitacao_atendimento'));

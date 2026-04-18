@@ -1,0 +1,41 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+
+<main class="hero">
+    <h1>Relatorio de Voluntarios sem atendimento recente</h1>
+    <p>Lista de voluntarios ativos que não realizaram atendimento nos ultimos 90 dias.</p>
+
+    <section class="dashboard-grid" style="margin: 24px 0;">
+        <article class="stat-card">
+            <h3>Sem atendimento nos ultimos 90 dias</h3>
+            <p style="font-size: 2rem; font-weight: 700; margin: 8px 0 0;"><%= resumo.inativos90Dias %></p>
+        </article>
+    </section>
+
+    <div class="form-container">
+        <table class="table-atendimentos">
+            <thead>
+                <tr>
+                    <th>Nome do Voluntario</th>
+                    <th>Ultima Participacao</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (voluntarios && voluntarios.length > 0) { %>
+                    <% voluntarios.forEach(v => { %>
+                        <tr>
+                            <td><strong><%= v.nome || 'Nao informado' %></strong></td>
+                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="2">Todos os voluntarios ativos realizaram atendimento recentemente.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

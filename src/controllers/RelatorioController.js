@@ -1,5 +1,6 @@
 const Atendimento = require('../models/Atendimento');
 const Assistido = require('../models/Assistido');
+const Voluntario = require('../models/Voluntario');
 
 exports.getAtendimentosHoje = async (req, res) => {
     try {
@@ -124,6 +125,76 @@ exports.getRelatorioVoluntarios = async (req, res) => {
         });
     } catch (err) {
         console.error('Erro no relatorio de voluntarios:', err);
+        res.status(500).send('Erro ao processar relatorio.');
+    }
+};
+
+exports.getVoluntariosInativos = async (req, res) => {
+    try {
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() - 90);
+        dataLimite.setHours(0, 0, 0, 0);
+
+        const voluntariosAtivos = await Voluntario.find({
+            esta_ativo: { $nin: ['Não', 'Nao', 'não', 'nao'] }
+        }).sort({ nome: 1 }).lean();
+
+        const nomesVoluntarios = voluntariosAtivos
+            .map((voluntario) => voluntario.nome)
+            .filter(Boolean);
+
+        const ultimasParticipacoes = nomesVoluntarios.length > 0
+            ? await Atendimento.aggregate([
+                {
+                    $match: {
+                        voluntario: { $exists: true, $nin: [null, ''] }
+                    }
+                },
+                {
+                    $project: {
+                        data: 1,
+                        voluntarioNormalizado: {
+                            $toLower: {
+                                $trim: { input: '$voluntario' }
+                            }
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$voluntarioNormalizado',
+                        ultimaParticipacao: { $max: '$data' }
+                    }
+                }
+            ])
+            : [];
+
+        const mapaUltimasParticipacoes = Object.fromEntries(
+            ultimasParticipacoes.map((item) => [item._id, item.ultimaParticipacao])
+        );
+
+        const voluntariosInativos = voluntariosAtivos
+            .map((voluntario) => ({
+                ...voluntario,
+                ultimaParticipacao: mapaUltimasParticipacoes[voluntario.nome.trim().toLowerCase()] || null
+            }))
+            .filter((voluntario) => !voluntario.ultimaParticipacao || new Date(voluntario.ultimaParticipacao) < dataLimite)
+            .sort((a, b) => {
+                if (!a.ultimaParticipacao && !b.ultimaParticipacao) return a.nome.localeCompare(b.nome);
+                if (!a.ultimaParticipacao) return -1;
+                if (!b.ultimaParticipacao) return 1;
+                return new Date(a.ultimaParticipacao) - new Date(b.ultimaParticipacao);
+            });
+
+        res.render('relatorios/relatorio_voluntarios_inativos', {
+            voluntarios: voluntariosInativos,
+            resumo: {
+                inativos90Dias: voluntariosInativos.length
+            },
+            titulo: 'Voluntarios sem atendimento recente'
+        });
+    } catch (err) {
+        console.error('Erro no relatorio de voluntarios inativos:', err);
         res.status(500).send('Erro ao processar relatorio.');
     }
 };
