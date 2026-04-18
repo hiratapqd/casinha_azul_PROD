@@ -113,9 +113,6 @@ router.get('/solicitacao_atendimento', (req, res) => res.render('solicitacao_ate
 router.post('/atendimento/solicitacao', solicitacaoController.criarSolicitacaoComCadastro);
 router.post('/atendimento/salvar', atendimentoController.salvarAtendimento);
 
-// --- ROTA DE VISUALIZACAO ---
-router.get('/visualizar_voluntarios', (req, res) => res.render('visualizar_voluntarios'));
-
 // --- ROTAS DE ATENDIMENTO (VIEWS) ---
 router.get('/atendimento/apometrico', (req, res) => res.render('atendimento/apometrico'));
 router.get('/atendimento/reiki', renderFormularioAtendimento('reiki'));

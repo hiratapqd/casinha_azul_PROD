@@ -1,7 +1,8 @@
 <%- include('partials/header') %>
 <link rel="stylesheet" href="/styles/styles.css">
+
 <main class="hero">
-    <h1>Escala de Voluntários</h1>
+    <h1>Escala de Voluntarios</h1>
 
     <form action="/visualizar_voluntarios" method="GET" class="form-container" style="display: flex; gap: 15px; align-items: flex-end;">
         <div class="form-group">
@@ -9,11 +10,11 @@
             <select name="dia" required>
                 <option value="">Selecione...</option>
                 <option value="seg" <%= filtros.dia === 'seg' ? 'selected' : '' %>>Segunda-feira</option>
-                <option value="ter" <%= filtros.dia === 'ter' ? 'selected' : '' %>>Terça-feira</option>
+                <option value="ter" <%= filtros.dia === 'ter' ? 'selected' : '' %>>Terca-feira</option>
                 <option value="qua" <%= filtros.dia === 'qua' ? 'selected' : '' %>>Quarta-feira</option>
                 <option value="qui" <%= filtros.dia === 'qui' ? 'selected' : '' %>>Quinta-feira</option>
                 <option value="sex" <%= filtros.dia === 'sex' ? 'selected' : '' %>>Sexta-feira</option>
-                <option value="sáb" <%= filtros.dia === 'sáb' ? 'selected' : '' %>>Sábado</option>
+                <option value="sáb" <%= filtros.dia === 'sáb' ? 'selected' : '' %>>Sabado</option>
                 <option value="dom" <%= filtros.dia === 'dom' ? 'selected' : '' %>>Domingo</option>
             </select>
         </div>
@@ -25,7 +26,7 @@
                 <option value="apometria" <%= filtros.terapia === 'apometria' ? 'selected' : '' %>>Apometria</option>
                 <option value="reiki" <%= filtros.terapia === 'reiki' ? 'selected' : '' %>>Reiki</option>
                 <option value="auriculo" <%= filtros.terapia === 'auriculo' ? 'selected' : '' %>>Auriculoterapia</option>
-                <option value="maos" <%= filtros.terapia === 'maos' ? 'selected' : '' %>>Mãos Sem Fronteiras</option>
+                <option value="maos" <%= filtros.terapia === 'maos' ? 'selected' : '' %>>Maos Sem Fronteiras</option>
                 <option value="homeopatia" <%= filtros.terapia === 'homeopatia' ? 'selected' : '' %>>Homeopatia</option>
                 <option value="passe" <%= filtros.terapia === 'passe' ? 'selected' : '' %>>Passe</option>
                 <option value="cantina" <%= filtros.terapia === 'cantina' ? 'selected' : '' %>>Cantina</option>
@@ -46,6 +47,7 @@
                     <th>Nome</th>
                     <th>Telefone</th>
                     <th>Mediunidade</th>
+                    <th>Ultimo Atendimento</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,15 +57,17 @@
                             <td><%= v.nome %></td>
                             <td><%= v.telefone || 'N/A' %></td>
                             <td><%= v.mediunidade || '-' %></td>
+                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
                         </tr>
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="3" style="text-align: center; padding: 10px;">Nenhum voluntário disponível para este dia/terapia.</td>
+                        <td colspan="4" style="text-align: center; padding: 10px;">Nenhum voluntario disponivel para este dia/terapia.</td>
                     </tr>
                 <% } %>
             </tbody>
         </table>
     <% } %>
 </main>
+
 <%- include('partials/footer') %>
