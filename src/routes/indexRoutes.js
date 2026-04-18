@@ -65,7 +65,7 @@ const formulariosAtendimento = {
         historicoVazioMensagem: 'Nenhum historico encontrado.',
         sucessoMensagem: 'Atendimento finalizado!',
         redirectAposSalvar: '/fila-atendimento',
-        prefixoQueixa: 'RELATO DA TRIAGEM:\n',
+        prefixoQueixa: 'RELATO NA TRIAGEM:\n',
         sufixoQueixa: '\n-----------------------------\nRECEITUARIO:\n'
     },
     maosSemFronteiras: {
@@ -80,7 +80,7 @@ const formulariosAtendimento = {
         historicoVazioMensagem: 'Nenhum historico encontrado para este CPF.',
         sucessoMensagem: 'Atendimento salvo!',
         redirectAposSalvar: '/fila-atendimento',
-        prefixoQueixa: 'RELATO DA TRIAGEM:\n',
+        prefixoQueixa: 'RELATO NA TRIAGEM:\n',
         sufixoQueixa: '\n-----------------------------\nRECEITUARIO:\n'
     }
 };
