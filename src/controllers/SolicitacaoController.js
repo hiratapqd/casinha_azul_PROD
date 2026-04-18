@@ -26,20 +26,16 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
         if (configLimite) {
             if (configLimite.limites && configLimite.limites[diaNome] !== undefined) {
                 limitePrincipal = configLimite.limites[diaNome];
-                console.log(`âœ… Sucesso! Capturado limite de ${diaNome}: ${limitePrincipal}`);
             } else if (configLimite.limite_principal !== undefined) {
                 limitePrincipal = configLimite.limite_principal;
-                console.log(`â„¹ï¸ Limite do dia nÃ£o definido, usando limite_principal: ${limitePrincipal}`);
             }
 
             limiteEspera = configLimite.limite_espera || 0;
         } else {
-            console.log('âš ï¸ Nenhuma configuraÃ§Ã£o encontrada no banco. Usando padrÃ£o zero.');
             limitePrincipal = 8;
         }
         const limiteTotal = limitePrincipal + limiteEspera;
 
-        const dataBase = dados.data;
         const totalHoje = await Solicitacao.countDocuments({
             tipo: tipoParaBusca,
             data_pedido: {
@@ -48,16 +44,10 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
             }
         });
 
-        console.log('ðŸ“Š ConfiguraÃ§Ã£o encontrada no banco:', configLimite);
-        console.log(`ðŸ”Ž Filtro: ${tipoParaBusca} entre ${dataBase}T00:00 e 23:59`);
-        console.log(`Contagem para ${dataBase}: ${totalHoje} de ${limiteTotal}`);
-
         if (totalHoje >= limiteTotal) {
-            console.log(`ðŸš« Limite atingido para ${diaNome}: ${totalHoje}/${limiteTotal}`);
-
             return res.json({
                 status: 'limite_excedido',
-                mensagem: `O limite de atendimentos para ${diaNome} (${limiteTotal} vagas) jÃ¡ foi alcanÃ§ado.`
+                mensagem: `O limite de atendimentos para ${diaNome} (${limiteTotal} vagas) ja foi alcancado.`
             });
         }
 
@@ -136,7 +126,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
 
             return res.json({
                 status: 'sucesso',
-                mensagem: 'SolicitaÃ§Ã£o registrada!',
+                mensagem: 'Solicitacao registrada!',
                 posicao: novaPosicao,
                 limite: limitePrincipal
             });
@@ -144,7 +134,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
             if (erroSave.code === 11000) {
                 return res.json({
                     status: 'duplicado',
-                    mensagem: 'Este CPF jÃ¡ possui uma solicitaÃ§Ã£o para este dia.'
+                    mensagem: 'Este CPF ja possui uma solicitacao para este dia.'
                 });
             }
 
@@ -152,7 +142,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
         }
     } catch (err) {
         if (err.code === 11000) {
-            return res.json({ status: 'duplicado', mensagem: 'O assistido jÃ¡ possui uma solicitaÃ§Ã£o hoje.' });
+            return res.json({ status: 'duplicado', mensagem: 'O assistido ja possui uma solicitacao hoje.' });
         }
         res.status(500).json({ status: 'erro', mensagem: err.message });
     }
@@ -228,7 +218,7 @@ exports.cancelarSolicitacao = async (req, res) => {
 
         res.redirect('/fila-atendimento');
     } catch (err) {
-        console.error('Erro ao cancelar solicitaÃ§Ã£o:', err);
+        console.error('Erro ao cancelar solicitacao:', err);
         res.status(500).send('Erro ao processar o cancelamento.');
     }
 };

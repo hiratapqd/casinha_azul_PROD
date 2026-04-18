@@ -33,7 +33,7 @@ exports.realizarCheckin = async (req, res) => {
                     status: 'Aguardando',
                     queixa_motivo: queixa
                 },
-                { upsert: true, new: true }
+                { upsert: true, returnDocument: 'after' }
             );
         });
 
@@ -65,7 +65,7 @@ exports.realizarCheckin = async (req, res) => {
                     tipo:terapia,
                     queixa_motivo: queixa
                 },
-                { upsert: true, new: true }
+                { upsert: true, returnDocument: 'after' }
             );
         });
 

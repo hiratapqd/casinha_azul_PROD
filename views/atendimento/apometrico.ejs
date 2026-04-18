@@ -123,7 +123,7 @@
                     // CORREÇÃO: Usando 'queixa_atual' conforme AtendimentoController.js
                     if (dataRes.queixa_atual) {
                         const campoObs = document.getElementById('descricao_atendimento');
-                        const textoQueixa = `QUEIXA DA RECEPÇÃO:\n${dataRes.queixa_atual}\n-----------------------------\nOBSERVAÇÕES:\n`;
+                        const textoQueixa = `QUEIXA NA RECEPÇÃO:\n${dataRes.queixa_atual}\n-----------------------------\nORIENTAÇÕES:\n`;
                         
                         if (campoObs.value.trim() === "") {
                             campoObs.value = textoQueixa;

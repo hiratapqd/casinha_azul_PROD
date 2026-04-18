@@ -1,0 +1,155 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+
+<main class="hero">
+    <h1><%= titulo %></h1>
+
+    <form action="<%= action %>" method="POST" class="form-container" id="atendimentoForm">
+        <input type="hidden" name="tipo" value="<%= tipo %>">
+        <input type="hidden" name="idSolicitacao" id="idSolicitacao">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Data:</label>
+                <input type="date" name="data" id="campo_data" required>
+            </div>
+            <div class="form-group flex-2">
+                <label>CPF:</label>
+                <input type="text" id="cpf_assistido" name="cpf_assistido" placeholder="Apenas numeros" required autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Nome:</label>
+                <input type="text" name="nome_assistido" id="campo_nome" required>
+            </div>
+
+            <div class="form-group">
+                <label>Terapeuta Responsavel:</label>
+                <input type="text" name="voluntario" required>
+            </div>
+        </div>
+
+        <% if (typeof mostrarObservacoes === 'undefined' || mostrarObservacoes !== false) { %>
+            <div class="form-group">
+                <label><%= typeof observacoesLabel === 'undefined' ? 'Observacoes:' : observacoesLabel %></label>
+                <textarea name="observacoes" id="descricao_atendimento" rows="<%= typeof observacoesRows === 'undefined' ? 4 : observacoesRows %>"></textarea>
+            </div><br>
+        <% } %>
+
+        <button type="submit" class="btn-atender btn-success"><%= botaoTexto %></button>
+    </form><br><br>
+
+    <hr>
+    <h3><%= historicoTitulo %></h3>
+    <table class="table-historico">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Terapeuta</th>
+                <th>Observacao</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+            <tr><td colspan="3"><%= mensagemHistoricoInicial %></td></tr>
+        </tbody>
+    </table>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const formularioConfig = {
+    tipo: <%- JSON.stringify(tipo) %>,
+    sucessoMensagem: <%- JSON.stringify(sucessoMensagem) %>,
+    historicoVazioMensagem: <%- JSON.stringify(historicoVazioMensagem) %>,
+    redirectAposSalvar: <%- JSON.stringify(redirectAposSalvar) %>,
+    mostrarObservacoes: <%- JSON.stringify(typeof mostrarObservacoes === 'undefined' ? true : mostrarObservacoes !== false) %>,
+    prefixoQueixa: <%- JSON.stringify(typeof prefixoQueixa !== 'undefined' ? prefixoQueixa : '') %>,
+    sufixoQueixa: <%- JSON.stringify(typeof sufixoQueixa !== 'undefined' ? sufixoQueixa : '') %>
+  };
+
+  const dataHoje = new Date().toISOString().split('T')[0];
+  document.getElementById('campo_data').value = dataHoje;
+
+  function renderizarTabela(lista) {
+    const corpo = document.getElementById('tabela-corpo');
+    if (!lista || lista.length === 0) {
+      corpo.innerHTML = `<tr><td colspan="3">${formularioConfig.historicoVazioMensagem}</td></tr>`;
+      return;
+    }
+
+    corpo.innerHTML = lista.map(item => {
+      const terapeuta = item.nome_voluntario || item.voluntario || '-';
+      const observacoes = item.observacoes_atendimento || item.observacoes || '-';
+      return `
+        <tr>
+          <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+          <td>${terapeuta}</td>
+          <td>${observacoes}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('cpf_assistido').addEventListener('blur', async function() {
+    const cpf = this.value.trim().replace(/\D/g, '');
+    if (cpf.length < 11) return;
+
+    document.getElementById('idSolicitacao').value = `${cpf}_${formularioConfig.tipo}_${dataHoje}`;
+
+    try {
+      const resDados = await fetch(`/api/dados-assistido/${cpf}`).then(r => r.json());
+      if (resDados) {
+        document.getElementById('campo_nome').value = resDados.nome_assistido || '';
+      }
+
+      const resHist = await fetch(`/api/historico/${formularioConfig.tipo}/${cpf}`).then(r => r.json());
+
+      if (resHist.queixa_atual && formularioConfig.prefixoQueixa && formularioConfig.mostrarObservacoes) {
+        const campoObs = document.getElementById('descricao_atendimento');
+        const textoQueixa = `${formularioConfig.prefixoQueixa}${resHist.queixa_atual}${formularioConfig.sufixoQueixa}`;
+
+        if (campoObs && campoObs.value.trim() === '') {
+          campoObs.value = textoQueixa;
+        }
+      }
+
+      renderizarTabela(resHist.historico || []);
+    } catch (err) {
+      console.error('Erro ao buscar dados:', err);
+    }
+  });
+
+  document.getElementById('atendimentoForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+
+    try {
+      const body = new URLSearchParams(new FormData(e.target));
+      const resp = await fetch(e.target.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+
+      if (!resp.ok) {
+        throw new Error();
+      }
+
+      await Swal.fire('Sucesso', formularioConfig.sucessoMensagem, 'success');
+
+      if (formularioConfig.redirectAposSalvar === 'reload') {
+        window.location.reload();
+      } else {
+        window.location.href = formularioConfig.redirectAposSalvar;
+      }
+    } catch (err) {
+      Swal.fire('Erro', 'Falha ao salvar atendimento.', 'error');
+      btn.disabled = false;
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

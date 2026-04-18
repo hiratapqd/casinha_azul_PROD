@@ -1,33 +1,41 @@
 <%- include('../partials/header') %>
 <link rel="stylesheet" href="/styles/styles.css">
+
 <main class="hero">
-    <h1>Relatório de Voluntários Ativos</h1>
-    <p>Lista de terapeutas que já realizaram atendimentos no sistema.</p>
+    <h1>Relatorio de Voluntarios Ativos</h1>
+    <p>Visao de participacao recente dos terapeutas que ja realizaram atendimentos no sistema.</p>
+
+    <section class="dashboard-grid" style="margin: 24px 0;">
+        <article class="stat-card">
+            <h3>Participaram nos ultimos 30 dias</h3>
+            <p style="font-size: 2rem; font-weight: 700; margin: 8px 0 0;"><%= resumo.ativos30Dias %></p>
+        </article>
+    </section>
 
     <div class="form-container">
         <table class="table-atendimentos">
             <thead>
                 <tr>
-                    <th>Nome do Voluntário</th> <th>Total de Atendimentos</th> <th>Última Participação</th> </tr>
+                    <th>Nome do Voluntario</th>
+                    <th>Ultima Participacao</th>
+                </tr>
             </thead>
             <tbody>
                 <% if (voluntarios && voluntarios.length > 0) { %>
                     <% voluntarios.forEach(v => { %>
                         <tr>
-                            <td><strong><%= v._id || 'Não informado' %></strong></td> 
-                            
-                            <td><%= v.totalAtendimentos %></td> 
-                            
+                            <td><strong><%= v._id || 'Nao informado' %></strong></td>
                             <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
                         </tr>
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="3">Nenhum voluntário encontrado no histórico.</td>
+                        <td colspan="2">Nenhum voluntario encontrado no historico.</td>
                     </tr>
                 <% } %>
             </tbody>
         </table>
     </div>
 </main>
+
 <%- include('../partials/footer') %>

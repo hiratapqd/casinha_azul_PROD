@@ -54,7 +54,7 @@ exports.salvarAtendimento = async (req, res) => {
         const solicitacaoAtualizada = await Solicitacao.findByIdAndUpdate(
             idSolicitacaoAtual,
             { status: 'Atendido' },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!solicitacaoAtualizada) {
@@ -110,8 +110,6 @@ exports.getHistoricoPorTipo = async (req, res) => {
         })
             .sort({ data: -1 })
             .lean();
-
-        console.log(`[Historico] tipo=${tipo} cpf=${cpf} encontrados=${historico.length}`);
 
         const hoje = new Date().toISOString().split('T')[0];
         const solicitacao = await Solicitacao.findOne({
