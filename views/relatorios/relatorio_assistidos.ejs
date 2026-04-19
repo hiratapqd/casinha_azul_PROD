@@ -65,16 +65,16 @@
                         <td><%= a.telefone || a.telefone_assistido %></td>
                         <td><%= a.email || a.email_assistido %></td>
                         <td>
-                            <% if (a.tratamentos && a.tratamentos.length > 0) { %>
+                            <% if (a.tratamentosResumo && a.tratamentosResumo.length > 0) { %>
                                 <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                    <% a.tratamentos.forEach(t => { 
-                                        const estilo = getEstilo(t); 
+                                    <% a.tratamentosResumo.forEach(item => { 
+                                        const estilo = getEstilo(item.tipo); 
                                     %>
                                         <span class="badge-tratamento" 
                                             style="background-color: <%= estilo.bg %>; 
                                                     color: <%= estilo.texto %>; 
                                                     border: 1px solid <%= estilo.borda %>;">
-                                            <%= t %>
+                                            <%= item.tipo %> <%= item.quantidade %>
                                         </span>
                                     <% }) %>
                                 </div>

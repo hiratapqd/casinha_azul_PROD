@@ -78,6 +78,30 @@ exports.getRelatorioGeralAssistidos = async (req, res) => {
                             initialValue: [],
                             in: { $setUnion: ['$$value', ['$$this']] }
                         }
+                    },
+                    tratamentosResumo: {
+                        $map: {
+                            input: {
+                                $reduce: {
+                                    input: '$meus_atendimentos.tipo',
+                                    initialValue: [],
+                                    in: { $setUnion: ['$$value', ['$$this']] }
+                                }
+                            },
+                            as: 'tipo',
+                            in: {
+                                tipo: '$$tipo',
+                                quantidade: {
+                                    $size: {
+                                        $filter: {
+                                            input: '$meus_atendimentos',
+                                            as: 'atendimento',
+                                            cond: { $eq: ['$$atendimento.tipo', '$$tipo'] }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             },
