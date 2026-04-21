@@ -2,8 +2,8 @@
 <link rel="stylesheet" href="/styles/styles.css">
 
 <main class="hero">
-    <h1>Relatorio de Voluntarios Ativos</h1>
-    <p>Visao de participacao recente dos terapeutas que ja realizaram atendimentos no sistema.</p>
+    <h1>Relatório de Voluntários Ativos</h1>
+    <p>Visão de participação recente dos terapeutas que já realizaram atendimentos no sistema.</p>
 
     <section class="dashboard-grid" style="margin: 24px 0;">
         <article class="stat-card">
@@ -28,21 +28,21 @@
         <table class="table-atendimentos" id="tabelaVoluntarios">
             <thead>
                 <tr>
-                    <th>Nome do Voluntario</th>
-                    <th>Ultima Participacao</th>
+                    <th>Nome do Voluntário</th>
+                    <th>Ultima Participação</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (voluntarios && voluntarios.length > 0) { %>
                     <% voluntarios.forEach(v => { %>
                         <tr>
-                            <td><strong><%= v._id || 'Nao informado' %></strong></td>
+                            <td><strong><%= v._id || 'Não informado' %></strong></td>
                             <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
                         </tr>
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="2">Nenhum voluntario encontrado no historico.</td>
+                        <td colspan="2">Nenhum voluntário encontrado no histárico.</td>
                     </tr>
                 <% } %>
             </tbody>

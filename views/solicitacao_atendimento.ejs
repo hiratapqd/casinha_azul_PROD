@@ -14,7 +14,7 @@
 </style>
 
 <main class="hero">
-    <h1>Solicitacao de Atendimento Apometrico</h1>
+    <h1>Solicitação de Atendimento Apométrico</h1>
     <form action="/atendimento/solicitacao" method="POST" class="form-container">
         
         <div class="form-row">
@@ -31,7 +31,7 @@
                 <input type="text" id="cpf_assistido" name="cpf_assistido" required inputmode="numeric" maxlength="14">
             </div>
             <div class="form-group">
-                <label for="nome">Nome de quem sera atendido:</label>
+                <label for="nome">Nome de quem será atendido:</label>
                 <input type="text" id="nome" name="nome" required>
             </div>
         </div>
@@ -46,7 +46,7 @@
                 <input type="date" id="data_nascimento" name="data_nascimento">
             </div>
             <div class="form-group">
-                <label for="religiao">Religiao:</label>
+                <label for="religiao">Religião:</label>
                 <input type="text" id="religiao" name="religiao">
             </div>
         </div>
@@ -85,7 +85,7 @@
             </div>
         </div><br><br>
         <div class="form-group" style="flex: 1;">
-            <label for="queixa">Breve descricao da queixa/motivo:</label>
+            <label for="queixa">Breve descrição da queixa/motivo:</label>
             <textarea id="queixa" name="queixa" rows="3"></textarea>
         </div><br>
 
@@ -98,7 +98,7 @@
         </div><br><br>
 
         <button type="submit" id="btnRegistrar" class="btn-atender btn-success" <%= typeof bloqueado !== 'undefined' && bloqueado ? 'disabled' : '' %>>
-            <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitacao' %>
+            <%= typeof bloqueado !== 'undefined' && bloqueado ? 'Limite Excedido para Hoje' : 'Registrar Solicitação' %>
         </button>
     </form>
     <div id="historico-container" style="margin-top: 20px; display: none;">
