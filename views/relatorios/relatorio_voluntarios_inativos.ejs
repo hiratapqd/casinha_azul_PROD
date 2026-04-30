@@ -2,8 +2,8 @@
 <link rel="stylesheet" href="/styles/styles.css">
 
 <main class="hero">
-    <h1>Relatório de Voluntários sem atendimento recente</h1>
-    <p>Lista de voluntários ativos que não realizaram atendimentos nos ultimos 90 dias.</p>
+    <h1>Relatorio de Voluntarios sem atendimento recente</h1>
+    <p>Lista de voluntarios ativos que não realizaram atendimento nos ultimos 90 dias.</p>
 
     <section class="dashboard-grid" style="margin: 24px 0;">
         <article class="stat-card">
@@ -12,24 +12,12 @@
         </article>
     </section>
 
-    <div style="width: 90%; margin: 0 auto 20px; text-align: left;">
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input
-                type="text"
-                id="inputNomeVoluntario"
-                placeholder="Buscar por nome..."
-                style="padding: 8px; width: 280px; border: 1px solid #ccc; border-radius: 4px;"
-            >
-            <p style="margin: 0;">Exibindo: <strong id="totalExibido"><%= voluntarios.length %></strong></p>
-        </div>
-    </div>
-
     <div class="form-container">
-        <table class="table-atendimentos" id="tabelaVoluntarios">
+        <table class="table-atendimentos">
             <thead>
                 <tr>
-                    <th>Nome do Voluntário</th>
-                    <th>Ultima Participação</th>
+                    <th>Nome do Voluntario</th>
+                    <th>Ultima Participacao</th>
                 </tr>
             </thead>
             <tbody>
@@ -42,45 +30,12 @@
                     <% }) %>
                 <% } else { %>
                     <tr>
-                        <td colspan="2">Todos os voluntários ativos realizaram atendimento recentemente.</td>
+                        <td colspan="2">Todos os voluntarios ativos realizaram atendimento recentemente.</td>
                     </tr>
                 <% } %>
             </tbody>
         </table>
     </div>
 </main>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const inputNome = document.getElementById('inputNomeVoluntario');
-        const tabela = document.getElementById('tabelaVoluntarios');
-        const linhas = tabela.querySelector('tbody').getElementsByTagName('tr');
-        const contador = document.getElementById('totalExibido');
-
-        function filtrarTabela() {
-            const filtroNome = inputNome.value.toLowerCase().trim();
-            let visiveis = 0;
-
-            Array.from(linhas).forEach((linha) => {
-                const colunas = linha.getElementsByTagName('td');
-                if (colunas.length > 0) {
-                    const textoNome = colunas[0].textContent.toLowerCase();
-                    const correspondeNome = textoNome.includes(filtroNome);
-
-                    if (correspondeNome) {
-                        linha.style.display = '';
-                        visiveis++;
-                    } else {
-                        linha.style.display = 'none';
-                    }
-                }
-            });
-
-            contador.textContent = visiveis;
-        }
-
-        inputNome.addEventListener('input', filtrarTabela);
-    });
-</script>
 
 <%- include('../partials/footer') %>

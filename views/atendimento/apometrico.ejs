@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="/styles/styles.css">
 
 <main class="hero">
-    <h1>Ficha de Atendimento - Apométrico</h1>
+    <h1>Ficha de Atendimento - Apometria</h1>
     
     <form action="/atendimento/salvar" method="POST" class="form-container" id="atendimentoForm">
         <input type="hidden" name="tipo" value="apometria">
@@ -29,20 +29,20 @@
                 <input type="text" name="idade_assistido" id="campo_idade">
             </div>
             <div class="form-group">
-                <label>Religião:</label>
+                <label>Religiao:</label>
                 <input type="text" name="religiao_assistido" id="campo_religiao">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label>Terapeuta Responsável:</label>
+                <label>Terapeuta Responsavel:</label>
                 <input type="text" name="voluntario" id="voluntario" required>
             </div>
         </div>
 
         <div class="form-group">
-            <label>Evolução do Atendimento:</label>
+            <label>Evolucao do Atendimento:</label>
             <textarea name="observacoes" id="descricao_atendimento" rows="5" required></textarea>
         </div>
         <br><br>
@@ -50,7 +50,7 @@
     </form><br><br>
 
     <hr>
-    <h3>Historico de Atendimentos - Apometria</h3>
+    <h3>Historico de Atendimentos</h3>
     <table class="table-historico">
         <thead>
             <tr>
@@ -173,7 +173,7 @@
         const btn = e.target.querySelector('button');
 
         if (!cpfTem11Digitos(campoCpf.value)) {
-            await Swal.fire('CPF inválido', 'Informe um CPF com 11 digitos antes de registrar.', 'warning');
+            await Swal.fire('CPF invalido', 'Informe um CPF com 11 digitos antes de finalizar.', 'warning');
             campoCpf.focus();
             return;
         }
@@ -183,7 +183,7 @@
         try {
             const assistido = await buscarAssistidoPorCpf(normalizarCpf(campoCpf.value));
             if (!assistido) {
-                await Swal.fire('Assistido não encontrado', 'Este CPF ainda não está cadastrado. Faça o cadastro antes de realizar o atendimento.', 'warning');
+                await Swal.fire('Assistido nao encontrado', 'Este CPF ainda nao esta cadastrado. Faca o cadastro antes de finalizar o atendimento.', 'warning');
                 campoCpf.focus();
                 btn.disabled = false;
                 return;

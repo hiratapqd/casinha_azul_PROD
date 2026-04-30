@@ -39,6 +39,7 @@ http://localhost:3000
 
 ```bash
 npm run db:setup
+npm run db:seed-demo
 npm run db:import-csv
 ```
 
@@ -53,8 +54,10 @@ O que cada comando faz:
 Para deixar o sistema pronto para apresentacao ou testes manuais:
 
 1. Configure o `.env` com `MONGODB_URI`.
-2. Execute `node seed_demo_apometria.js`.
-3. Execute `node server.js`.
+2. Execute `npm install`.
+3. Execute `npm run db:setup`.
+4. Execute `npm run db:seed-demo`.
+5. Execute `npm server.js`.
 
 O seed de demonstração prepara os dados para demonstrar o bloqueio de solicitação de atendimento apometrico dentro dos seguintes parametros: a proxima apometria somente depois de 28 dias, caso o assistido tenha recebido o atendimento apometrico e passe e não fez nenhum outro tratamento, será necessário esperar 90 dias para uma nova solicitação de apometria
 

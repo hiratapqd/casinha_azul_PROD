@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const Atendimento = require('../src/models/Atendimento');
 
-const DEFAULT_CSV_PATH = path.resolve(__dirname, '..', 'atendimentos.csv');
+const DEFAULT_CSV_PATH = path.resolve(__dirname, '..', 'casinha_azul.atendimentos.csv');
 const DEFAULT_BATCH_SIZE = 500;
 
 function parseArgs(argv) {

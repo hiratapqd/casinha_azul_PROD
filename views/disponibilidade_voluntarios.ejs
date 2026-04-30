@@ -1,0 +1,149 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/styles/styles.css">
+
+<%
+    const diasPorValor = Object.fromEntries(dias.map((dia) => [dia.value, dia.label]));
+
+    function nomeDia(valor) {
+        return diasPorValor[valor] || valor;
+    }
+%>
+
+<main class="hero disponibilidade-page">
+    <h1>Disponibilidade dos Voluntarios</h1>
+    <p>Consulte os dias em que cada voluntario esta disponivel por modalidade.</p>
+
+    <section class="disponibilidade-resumo">
+        <article class="resumo-item">
+            <span class="resumo-label">Voluntarios encontrados</span>
+            <strong><%= resumo.total %></strong>
+        </article>
+        <article class="resumo-item">
+            <span class="resumo-label">Ativos</span>
+            <strong><%= resumo.ativos %></strong>
+        </article>
+        <article class="resumo-item">
+            <span class="resumo-label">Com disponibilidade</span>
+            <strong><%= resumo.comDisponibilidade %></strong>
+        </article>
+    </section>
+
+    <form action="/voluntarios/disponibilidade" method="GET" class="form-container disponibilidade-filtros">
+        <div class="form-group">
+            <label for="busca">Buscar voluntario:</label>
+            <input
+                type="text"
+                id="busca"
+                name="busca"
+                value="<%= filtros.busca || '' %>"
+                placeholder="Nome, CPF, telefone ou email"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" name="status">
+                <option value="todos" <%= filtros.status === 'todos' ? 'selected' : '' %>>Todos</option>
+                <option value="ativos" <%= filtros.status === 'ativos' ? 'selected' : '' %>>Ativos</option>
+                <option value="inativos" <%= filtros.status === 'inativos' ? 'selected' : '' %>>Inativos</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="modalidade">Modalidade:</label>
+            <select id="modalidade" name="modalidade">
+                <option value="">Todas</option>
+                <% modalidades.forEach((modalidade) => { %>
+                    <option value="<%= modalidade.id %>" <%= filtros.modalidade === modalidade.id ? 'selected' : '' %>>
+                        <%= modalidade.label %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="dia">Dia:</label>
+            <select id="dia" name="dia">
+                <option value="">Todos</option>
+                <% dias.forEach((dia) => { %>
+                    <option value="<%= dia.value %>" <%= filtros.dia === dia.value ? 'selected' : '' %>>
+                        <%= dia.label %>
+                    </option>
+                <% }) %>
+            </select>
+        </div>
+
+        <div class="filtro-acoes">
+            <button type="submit" class="btn-atender btn-success">Filtrar</button>
+            <a href="/voluntarios/disponibilidade" class="btn-atender">Limpar</a>
+        </div>
+    </form>
+
+    <div class="disponibilidade-tabela-container">
+        <table class="disponibilidade-tabela">
+            <thead>
+                <tr>
+                    <th>Voluntario</th>
+                    <th>Status</th>
+                    <th>Contato</th>
+                    <% modalidades.forEach((modalidade) => { %>
+                        <th><%= modalidade.label %></th>
+                    <% }) %>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (voluntarios && voluntarios.length > 0) { %>
+                    <% voluntarios.forEach((voluntario) => { %>
+                        <tr>
+                            <td>
+                                <strong><%= voluntario.nome || 'Nao informado' %></strong>
+                                <span class="texto-apoio">CPF: <%= voluntario._id || '-' %></span>
+                                <% if (voluntario.mediunidade) { %>
+                                    <span class="texto-apoio"><%= voluntario.mediunidade %></span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="status-badge <%= voluntario.esta_ativo === 'Sim' ? 'atendimento' : 'alerta' %>">
+                                    <%= voluntario.esta_ativo === 'Sim' ? 'Ativo' : 'Inativo' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span><%= voluntario.telefone || '-' %></span>
+                                <% if (voluntario.email) { %>
+                                    <span class="texto-apoio"><%= voluntario.email %></span>
+                                <% } %>
+                            </td>
+                            <% modalidades.forEach((modalidade) => { %>
+                                <td>
+                                    <div class="dias-lista">
+                                        <%
+                                            const diasVoluntarioRaw = voluntario.disponibilidade && voluntario.disponibilidade[modalidade.id];
+                                            const diasVoluntario = Array.isArray(diasVoluntarioRaw)
+                                                ? diasVoluntarioRaw
+                                                : (diasVoluntarioRaw ? [diasVoluntarioRaw] : []);
+                                        %>
+                                        <% if (diasVoluntario.length > 0) { %>
+                                            <% diasVoluntario.forEach((dia) => { %>
+                                                <span class="dia-chip"><%= nomeDia(dia) %></span>
+                                            <% }) %>
+                                        <% } else { %>
+                                            <span class="sem-disponibilidade">-</span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            <% }) %>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="<%= modalidades.length + 3 %>" class="estado-vazio">
+                            Nenhum voluntario encontrado para os filtros selecionados.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

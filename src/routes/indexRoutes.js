@@ -15,73 +15,73 @@ const formulariosAtendimento = {
         titulo: 'Ficha de Atendimento - Reiki',
         tipo: 'reiki',
         action: '/atendimento/salvar',
-        historicoTitulo: 'Histórico de Atendimentos - Reiki',
+        historicoTitulo: 'Historico de Reiki',
         mostrarObservacoes: false,
-        observacoesLabel: 'Observações:',
+        observacoesLabel: 'Observacoes:',
         observacoesRows: 4,
         botaoTexto: 'Finalizar Atendimento',
-        mensagemHistoricoInicial: 'Digite o CPF para carregar o histórico.',
+        mensagemHistoricoInicial: 'Digite o CPF para carregar o historico.',
         historicoVazioMensagem: 'Nenhum atendimento anterior.',
-        sucessoMensagem: 'Atendimento de Reiki Finalizado!',
+        sucessoMensagem: 'Atendimento de Reiki salvo!',
         redirectAposSalvar: '/fila-atendimento'
     },
     auriculo: {
-        titulo: 'Ficha de Atendimento - Aurículo',
+        titulo: 'Ficha de Atendimento - Auriculo',
         tipo: 'auriculo',
         action: '/atendimento/salvar',
-        historicoTitulo: 'Historico de Atendimentos - Aurículo',
+        historicoTitulo: 'Historico de Atendimentos',
         mostrarObservacoes: false,
         observacoesLabel: 'Evolução / Observações:',
         observacoesRows: 5,
         botaoTexto: 'Finalizar Atendimento',
         mensagemHistoricoInicial: 'Aguardando CPF...',
         historicoVazioMensagem: 'Nenhum historico encontrado.',
-        sucessoMensagem: 'Atendimento de Aurículo finalizado!',
+        sucessoMensagem: 'Atendimento finalizado!',
         redirectAposSalvar: '/fila-atendimento'
     },
     passe: {
         titulo: 'Ficha de Atendimento - Passe',
         tipo: 'passe',
         action: '/atendimento/salvar',
-        historicoTitulo: 'Historico de Atendimentos - Passes',
+        historicoTitulo: 'Historico de Passes',
         mostrarObservacoes: false,
         observacoesLabel: 'Evolução / Observações:',
         observacoesRows: 10,
         botaoTexto: 'Finalizar Passe',
         mensagemHistoricoInicial: 'Aguardando CPF...',
-        historicoVazioMensagem: 'Nenhum histórico encontrado.',
+        historicoVazioMensagem: 'Nenhum historico encontrado.',
         sucessoMensagem: 'Passe finalizado!',
         redirectAposSalvar: '/fila-atendimento'
     },
     homeopatico: {
-        titulo: 'Ficha de Atendimento - Homeopático',
+        titulo: 'Ficha de Atendimento - Homeopatico',
         tipo: 'homeopatia',
         action: '/atendimento/salvar',
-        historicoTitulo: 'Historico de Atendimentos - Homeopatia',
+        historicoTitulo: 'Historico de Atendimentos',
         observacoesLabel: 'Evolução / Observações:',
         observacoesRows: 10,
         botaoTexto: 'Finalizar Atendimento',
         mensagemHistoricoInicial: 'Aguardando CPF...',
-        historicoVazioMensagem: 'Nenhum histórico encontrado.',
+        historicoVazioMensagem: 'Nenhum historico encontrado.',
         sucessoMensagem: 'Atendimento finalizado!',
         redirectAposSalvar: '/fila-atendimento',
         prefixoQueixa: 'RELATO NA TRIAGEM:\n',
-        sufixoQueixa: '\n-----------------------------\nRECEITUÁRIO:\n'
+        sufixoQueixa: '\n-----------------------------\nRECEITUARIO:\n'
     },
     maosSemFronteiras: {
-        titulo: 'Ficha de Atendimento - Mãos Sem Fronteiras',
+        titulo: 'Ficha de Atendimento - Maos sem Fronteiras',
         tipo: 'maos_sem_fronteiras',
         action: '/atendimento/salvar',
-        historicoTitulo: 'Histórico de Atendimentos - Mãos Sem Fronteiras',
+        historicoTitulo: 'Historico de Maos sem Fronteiras',
         observacoesLabel: 'Evolução / Observações:',
         observacoesRows: 4,
         botaoTexto: 'Finalizar o Atendimento',
-        mensagemHistoricoInicial: 'Digite o CPF para carregar o histórico.',
-        historicoVazioMensagem: 'Nenhum histórico encontrado para este CPF.',
+        mensagemHistoricoInicial: 'Digite o CPF para carregar o historico.',
+        historicoVazioMensagem: 'Nenhum historico encontrado para este CPF.',
         sucessoMensagem: 'Atendimento salvo!',
         redirectAposSalvar: '/fila-atendimento',
         prefixoQueixa: 'RELATO NA TRIAGEM:\n',
-        sufixoQueixa: '\n-----------------------------\nRECEITUÁRIO:\n'
+        sufixoQueixa: '\n-----------------------------\nRECEITUARIO:\n'
     }
 };
 
@@ -105,6 +105,7 @@ router.get('/atendimento/iniciar/:id', solicitacaoController.iniciarAtendimento)
 // --- ROTAS DE VOLUNTARIOS (Mediuns) --- // POST para salvar
 router.get('/cadastro_mediuns', (req, res) => res.render('cadastro_mediuns'));
 router.post('/medium/novo', voluntarioController.criarVoluntario);
+router.get('/voluntarios/disponibilidade', voluntarioController.getDisponibilidadeVoluntarios);
 router.get('/visualizar_voluntarios', voluntarioController.getVisualizarVoluntarios);
 router.get('/relatorios/relatorio-voluntarios', relatorioController.getRelatorioVoluntarios);
 router.get('/relatorios/relatorio-voluntarios-inativos', relatorioController.getVoluntariosInativos);
