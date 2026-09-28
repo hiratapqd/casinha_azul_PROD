@@ -172,7 +172,8 @@ exports.getRelatorioVoluntarios = async (req, res) => {
             {
                 $match: {
                     cpf_voluntario: { $exists: true, $nin: [null, ''] },
-                    data_presenca: { $gte: dataLimite }
+                    data_presenca: { $gte: dataLimite },
+                    origem: { $ne: 'atendimentos' }
                 }
             },
             { $sort: { data_presenca: -1, data_registro: -1 } },
@@ -229,7 +230,8 @@ exports.getVoluntariosInativos = async (req, res) => {
                 {
                     $match: {
                         cpf_voluntario: { $exists: true, $nin: [null, ''] },
-                        data_presenca: { $exists: true, $ne: null }
+                        data_presenca: { $exists: true, $ne: null },
+                        origem: { $ne: 'atendimentos' }
                     }
                 },
                 {

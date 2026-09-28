@@ -10,7 +10,6 @@
     "db:import-csv": "node populate_db/import_atendimentos_csv.js",
     "db:import-vendas": "node populate_db/import_vendas_csv.js --confirm-delete",
     "db:import-vendas:dry-run": "node populate_db/import_vendas_csv.js --dry-run",
-    "db:import-presencas": "node populate_db/import_presencas_voluntarios.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
