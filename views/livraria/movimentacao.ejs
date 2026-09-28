@@ -4,7 +4,7 @@
 
 <div class="container">
     <div class="hero">
-        <h1>Movimentacao da Livraria</h1>
+        <h1>Movimentação da Livraria</h1>
         <p>Analise vendas acumuladas, faixas de venda e livros sem movimento recente</p>
     </div>
 
@@ -127,7 +127,8 @@
                         <td>
                             <span class="status-badge <%= livro.estoque_atual <= (livro.estoque_minimo || 2) ? 'alerta' : 'atendimento' %>">
                                 <%= livro.estoque_atual %> un
-                            </span>
+                            </span><br>
+                            <small style="color: #777;">Minimo: <%= livro.estoque_minimo || 2 %> un</small>
                         </td>
                         <td>
                             <% if (livro.ultimaVenda) { %>

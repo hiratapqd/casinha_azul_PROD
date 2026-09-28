@@ -59,35 +59,85 @@ function renderFormularioPresenca(res, feedback = null, statusCode = 200) {
     });
 }
 
+function montarDisponibilidade(dados = {}) {
+    return Object.fromEntries(
+        modalidadesDisponibilidade.map(({ id }) => {
+            const valor = dados[`disp_${id}`];
+            const dias = Array.isArray(valor) ? valor : (valor ? [valor] : []);
+
+            return [id, dias];
+        })
+    );
+}
+
+async function buscarVoluntarioPorCpf(cpf) {
+    const cpfRegex = criarRegexCpfFlexivel(cpf);
+    const voluntario = await Voluntario.findById(cpf).lean();
+
+    return voluntario || Voluntario.findOne({ _id: cpfRegex }).lean();
+}
+
+exports.getDadosVoluntario = async (req, res) => {
+    try {
+        const cpf = normalizarCpf(req.params.cpf);
+
+        if (cpf.length !== 11) {
+            return res.status(400).json({
+                status: 'erro',
+                mensagem: 'Informe um CPF com 11 digitos.'
+            });
+        }
+
+        const voluntario = await buscarVoluntarioPorCpf(cpf);
+
+        if (!voluntario) {
+            return res.status(404).json(null);
+        }
+
+        return res.json({
+            cpf: normalizarCpf(voluntario._id),
+            nome: voluntario.nome || '',
+            telefone: voluntario.telefone || '',
+            email: voluntario.email || '',
+            mediunidade: voluntario.mediunidade || '',
+            disponibilidade: voluntario.disponibilidade || {}
+        });
+    } catch (err) {
+        console.error('Erro ao buscar voluntario:', err);
+        return res.status(500).json({
+            status: 'erro',
+            mensagem: 'Nao foi possivel buscar o voluntario agora.'
+        });
+    }
+};
+
 exports.criarVoluntario = async (req, res) => {
     try {
         const dados = req.body;
+        const cpf = normalizarCpf(dados.cpf);
         const forceUpdate = dados.forceUpdate === 'true' || dados.forceUpdate === true;
 
-        const existe = await Voluntario.findById(dados.cpf);
+        if (cpf.length !== 11) {
+            return res.status(400).json({
+                status: 'erro',
+                mensagem: 'Informe um CPF com 11 digitos.'
+            });
+        }
+
+        const existe = await buscarVoluntarioPorCpf(cpf);
         if (existe && !forceUpdate) {
             return res.json({ status: 'conflito', mensagem: 'CPF ja cadastrado' });
         }
 
         await Voluntario.findByIdAndUpdate(
-            dados.cpf,
+            existe ? existe._id : cpf,
             {
-                _id: dados.cpf,
                 nome: dados.nome,
                 telefone: dados.telefone,
                 email: dados.email,
                 mediunidade: dados.mediunidade,
                 esta_ativo: 'Sim',
-                disponibilidade: {
-                    apometria: dados.disp_apometria || [],
-                    reiki: dados.disp_reiki || [],
-                    auriculo: dados.disp_auriculo || [],
-                    maos: dados.disp_maos || [],
-                    homeopatia: dados.disp_homeopatia || [],
-                    passe: dados.disp_passe || [],
-                    cantina: dados.disp_cantina || [],
-                    mesa: dados.disp_mesa || []
-                }
+                disponibilidade: montarDisponibilidade(dados)
             },
             { upsert: true, returnDocument: 'after' }
         );

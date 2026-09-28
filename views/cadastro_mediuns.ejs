@@ -7,13 +7,14 @@
         <input type="hidden" id="forceUpdate" name="forceUpdate" value="false">
     <div class="form-row">
         <div class="form-group">
-            <label for="nome">Nome Completo:</label>
-            <input type="text" id="nome" name="nome" required>
+            <label for="cpf">CPF:</label>
+            <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off" required>
+            <small id="cpfStatus" class="texto-apoio" role="status" aria-live="polite"></small>
         </div><br>
 
         <div class="form-group">
-            <label for="cpf">CPF:</label>
-            <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" required>
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
         </div><br>
     </div><br>
     <div class="form-row">
@@ -70,13 +71,100 @@
 </div>
 
     </div><br>
-        <button type="submit" class="btn-atender btn-success">Finalizar Cadastro do medium</button>
+        <button type="submit" id="botaoSalvar" class="btn-atender btn-success">Finalizar Cadastro do medium</button>
     </form>
 
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const form = document.getElementById('formVoluntario');
+    const cpfInput = document.getElementById('cpf');
+    const cpfStatus = document.getElementById('cpfStatus');
+    const forceUpdateInput = document.getElementById('forceUpdate');
+    const botaoSalvar = document.getElementById('botaoSalvar');
+    const terapias = ['apometria', 'reiki', 'auriculo', 'maos', 'homeopatia', 'passe', 'cantina', 'mesa'];
+    let sequenciaBusca = 0;
+
+    function normalizarCpf(valor) {
+        return (valor || '').replace(/\D/g, '');
+    }
+
+    function definirModoEdicao(emEdicao) {
+        forceUpdateInput.value = emEdicao ? 'true' : 'false';
+        botaoSalvar.textContent = emEdicao ? 'Atualizar cadastro do medium' : 'Finalizar Cadastro do medium';
+    }
+
+    function limparDadosVoluntario() {
+        ['nome', 'telefone', 'email', 'mediunidade'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        form.querySelectorAll('input[name^="disp_"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+
+    function preencherDadosVoluntario(voluntario) {
+        document.getElementById('nome').value = voluntario.nome || '';
+        document.getElementById('telefone').value = voluntario.telefone || '';
+        document.getElementById('email').value = voluntario.email || '';
+        document.getElementById('mediunidade').value = voluntario.mediunidade || '';
+
+        terapias.forEach(terapia => {
+            const dias = voluntario.disponibilidade?.[terapia] || [];
+            const diasSelecionados = Array.isArray(dias) ? dias : [dias];
+
+            form.querySelectorAll(`input[name="disp_${terapia}"]`).forEach(checkbox => {
+                checkbox.checked = diasSelecionados.includes(checkbox.value);
+            });
+        });
+    }
+
+    async function buscarVoluntario() {
+        const cpf = normalizarCpf(cpfInput.value);
+        const buscaAtual = ++sequenciaBusca;
+
+        definirModoEdicao(false);
+        cpfStatus.textContent = '';
+
+        if (cpf.length !== 11) {
+            botaoSalvar.disabled = false;
+            return;
+        }
+
+        botaoSalvar.disabled = true;
+        cpfStatus.textContent = 'Buscando cadastro...';
+
+        try {
+            const resposta = await fetch(`/api/dados-voluntario/${cpf}`);
+            if (buscaAtual !== sequenciaBusca) return;
+
+            if (resposta.status === 404) {
+                limparDadosVoluntario();
+                cpfStatus.textContent = 'CPF ainda não cadastrado.';
+                return;
+            }
+
+            if (!resposta.ok) {
+                throw new Error('Falha ao buscar voluntário');
+            }
+
+            const voluntario = await resposta.json();
+            if (buscaAtual !== sequenciaBusca) return;
+
+            preencherDadosVoluntario(voluntario);
+            definirModoEdicao(true);
+            cpfStatus.textContent = 'Cadastro e disponibilidade carregados.';
+        } catch (err) {
+            console.error('Erro na busca do voluntário:', err);
+            cpfStatus.textContent = 'Não foi possível consultar este CPF.';
+        } finally {
+            if (buscaAtual === sequenciaBusca) {
+                botaoSalvar.disabled = false;
+            }
+        }
+    }
+
+    cpfInput.addEventListener('input', buscarVoluntario);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault(); // Impede o envio padrão que causa a página branca
@@ -85,7 +173,6 @@
         const dados = Object.fromEntries(formData.entries());
 
         // Captura manual das disponibilidades para garantir o formato de Array no MongoDB
-        const terapias = ['apometria', 'reiki', 'auriculo', 'maos', 'homeopatia', 'passe', 'cantina', 'mesa'];
         terapias.forEach(terapia => {
             // Busca pelos checkboxes que agora seguem o padrão name="disp_terapia"
             const marcados = Array.from(form.querySelectorAll(`input[name="disp_${terapia}"]:checked`))
@@ -112,15 +199,15 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        document.querySelectorAll('input[name="forceUpdate"]').forEach(input => {
-                            input.value = 'true';
-                        });
+                        forceUpdateInput.value = 'true';
                         form.requestSubmit(); // Reenvia o formulário com o flag de atualização
                     }
                 });
             } else if (resultado.status === 'sucesso') {
                 Swal.fire('Sucesso!', 'Dados gravados com sucesso.', 'success')
                     .then(() => window.location.href = '/cadastro_mediuns');
+            } else {
+                Swal.fire('Erro!', resultado.mensagem || 'Não foi possível salvar os dados.', 'error');
             }
         } catch (err) {
             console.error("Erro no envio:", err);
