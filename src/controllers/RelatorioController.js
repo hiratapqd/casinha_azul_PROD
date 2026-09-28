@@ -8,7 +8,45 @@ function normalizarTipo(tipo = '') {
 }
 
 function normalizarCpf(cpf = '') {
-    return String(cpf).replace(/\D/g, '');
+    const cpfNumerico = String(cpf).replace(/\D/g, '');
+
+    return cpfNumerico && cpfNumerico.length < 11
+        ? cpfNumerico.padStart(11, '0')
+        : cpfNumerico;
+}
+
+function consolidarPresencasPorCpf(registros = []) {
+    const presencasPorCpf = new Map();
+
+    registros.forEach((registro) => {
+        const cpf = normalizarCpf(registro.cpf ?? registro._id);
+        if (cpf.length !== 11) return;
+
+        const participacao = registro.ultimaParticipacao
+            ? new Date(registro.ultimaParticipacao)
+            : null;
+        const existente = presencasPorCpf.get(cpf);
+
+        if (!existente) {
+            presencasPorCpf.set(cpf, {
+                ...registro,
+                _id: cpf,
+                cpf,
+                ultimaParticipacao: participacao,
+                totalPresencas: Number(registro.totalPresencas) || 0
+            });
+            return;
+        }
+
+        existente.totalPresencas += Number(registro.totalPresencas) || 0;
+
+        if (participacao && (!existente.ultimaParticipacao || participacao > existente.ultimaParticipacao)) {
+            existente.ultimaParticipacao = participacao;
+            existente.nome = registro.nome || existente.nome;
+        }
+    });
+
+    return Array.from(presencasPorCpf.values());
 }
 
 exports.getAtendimentosHoje = async (req, res) => {
@@ -130,7 +168,7 @@ exports.getRelatorioVoluntarios = async (req, res) => {
         dataLimite.setDate(dataLimite.getDate() - 30);
         dataLimite.setHours(0, 0, 0, 0);
 
-        const listaVoluntarios = await PresencaVoluntario.aggregate([
+        const presencasAgrupadas = await PresencaVoluntario.aggregate([
             {
                 $match: {
                     cpf_voluntario: { $exists: true, $nin: [null, ''] },
@@ -146,9 +184,14 @@ exports.getRelatorioVoluntarios = async (req, res) => {
                     ultimaParticipacao: { $first: '$data_presenca' },
                     totalPresencas: { $sum: 1 }
                 }
-            },
-            { $sort: { ultimaParticipacao: -1, nome: 1 } }
+            }
         ]);
+
+        const listaVoluntarios = consolidarPresencasPorCpf(presencasAgrupadas)
+            .sort((a, b) => (
+                new Date(b.ultimaParticipacao) - new Date(a.ultimaParticipacao)
+                || (a.nome || '').localeCompare(b.nome || '')
+            ));
 
         const voluntariosAtivos30Dias = listaVoluntarios.length;
 
@@ -175,28 +218,35 @@ exports.getVoluntariosInativos = async (req, res) => {
             esta_ativo: { $nin: ['Não', 'Nao', 'não', 'nao'] }
         }).sort({ nome: 1 }).lean();
 
-        const cpfsVoluntarios = voluntariosAtivos
-            .map((voluntario) => normalizarCpf(voluntario._id))
-            .filter((cpf) => cpf.length === 11);
+        const cpfsVoluntarios = new Set(
+            voluntariosAtivos
+                .map((voluntario) => normalizarCpf(voluntario._id))
+                .filter((cpf) => cpf.length === 11)
+        );
 
-        const ultimasParticipacoes = cpfsVoluntarios.length > 0
+        const ultimasParticipacoesAgrupadas = cpfsVoluntarios.size > 0
             ? await PresencaVoluntario.aggregate([
                 {
                     $match: {
-                        cpf_voluntario: { $in: cpfsVoluntarios }
+                        cpf_voluntario: { $exists: true, $nin: [null, ''] },
+                        data_presenca: { $exists: true, $ne: null }
                     }
                 },
                 {
                     $group: {
                         _id: '$cpf_voluntario',
-                        ultimaParticipacao: { $max: '$data_presenca' }
+                        cpf: { $first: '$cpf_voluntario' },
+                        ultimaParticipacao: { $max: '$data_presenca' },
+                        totalPresencas: { $sum: 1 }
                     }
                 }
             ])
             : [];
 
         const mapaPresencas = Object.fromEntries(
-            ultimasParticipacoes.map((item) => [item._id, item])
+            consolidarPresencasPorCpf(ultimasParticipacoesAgrupadas)
+                .filter((item) => cpfsVoluntarios.has(item.cpf))
+                .map((item) => [item.cpf, item])
         );
 
         const voluntariosInativos = voluntariosAtivos
