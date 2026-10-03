@@ -1,0 +1,36 @@
+<%- include('inicio', { titulo: 'Configurações da operação' }) %>
+<% if (salvo) { %><p class="sucesso" role="status">Configuração salva.</p><% } %>
+<p>Configure as modalidades disponíveis, vagas e encaminhamentos. Cada modalidade é salva separadamente.</p>
+<section id="planos-atendimento">
+<h2>Planos de atendimento</h2>
+<p>O plano padrão é 3 passes. Os planos são selecionados no atendimento apométrico.</p>
+<form method="POST" action="/configuracoes/planos-atendimento" class="painel">
+<h3>Criar novo plano de atendimento</h3>
+<%- include('campos_plano_atendimento', { chave: 'novo_plano', plano: null, modalidades }) %>
+<button type="submit" class="btn-atender btn-success">Criar plano de atendimento</button>
+</form>
+<% (typeof planosAtendimento === 'undefined' ? [] : planosAtendimento).forEach(p => { %>
+<details class="painel"><summary><%= p.nome %><%= p.id === 'passes' ? ' — Padrão' : '' %></summary>
+<% if (p.fixo) { %><p><%= p.descricao %></p><% } else { %>
+<form method="POST" action="/configuracoes/planos-atendimento/<%= p.id %>">
+<%- include('campos_plano_atendimento', { chave: p.id, plano: p, modalidades }) %>
+<button type="submit" class="btn-atender btn-success">Salvar plano de atendimento</button>
+</form><% } %></details><% }) %>
+</section>
+<h2>Modalidades e vagas</h2>
+<% configuracoes.forEach(c => { %><details class="painel"><summary><%= c.nome %> — <%= c.ativa ? 'Ativa' : 'Inativa' %></summary>
+<form method="POST" action="/configuracoes/<%= c.id %>">
+<div class="campos"><div><label><input type="checkbox" name="ativa" <%= c.ativa ? 'checked' : '' %>>Modalidade ativa</label></div>
+<% if (!c.grupo) { %>
+<div><label><input type="checkbox" name="requerSolicitacaoPrevia" <%= c.requerSolicitacaoPrevia ? 'checked' : '' %>>Exigir solicitação antes de finalizar atendimento</label></div>
+<% if (c.id !== 'passe') { %><div><label><input type="checkbox" name="geraPasseAoFinalizar" <%= c.geraPasseAoFinalizar ? 'checked' : '' %>>Encaminhar para passe ao finalizar</label></div><% } %>
+<% } %></div>
+<% if (c.grupo) { %><p>O GAPPUS usa uma <a href="/atendimento/gappus">lista de presença por encontro</a>. Cadastre os responsáveis na disponibilidade dos voluntários. A participação no grupo não consome vagas da fila individual.</p><% } else { %>
+<div class="campos"><div><label for="principal_<%= c.id %>">Vagas principais padrão</label><input type="number" name="limite_principal" id="principal_<%= c.id %>" min="0" max="10000" step="1" value="<%= c.limite_principal ?? '' %>"><small>Em branco: sem limite. Zero: sem vagas.</small></div><div><label for="espera_<%= c.id %>">Vagas de espera</label><input type="number" name="limite_espera" id="espera_<%= c.id %>" min="0" max="10000" value="<%= c.limite_espera %>" required></div></div>
+<fieldset><legend>Vagas principais por dia</legend><p class="nota">Em branco usa o padrão. Zero impede solicitações nesse dia.</p><div class="campos"><% dias.forEach(dia => { %><div><label for="<%= c.id %>_<%= dia %>"><%= dia %></label><input type="number" id="<%= c.id %>_<%= dia %>" name="limite_<%= dia %>" min="0" max="10000" step="1" value="<%= c.limites[dia] ?? '' %>"></div><% }) %></div></fieldset>
+<fieldset><legend>Vagas de espera por dia</legend><p class="nota">Em branco usa o padrão de espera. Zero desativa a espera nesse dia. Sem vagas principais, o dia permanece fechado.</p><div class="campos"><% dias.forEach(dia => { %><div><label for="espera_<%= c.id %>_<%= dia %>"><%= dia %></label><input type="number" id="espera_<%= c.id %>_<%= dia %>" name="espera_<%= dia %>" min="0" max="10000" step="1" value="<%= c.limites_espera?.[dia] ?? '' %>"></div><% }) %></div></fieldset>
+<% if (c.id === 'apometria') { %><div class="campos"><div><label for="intervalo">Intervalo mínimo entre apometrias (dias)</label><input type="number" id="intervalo" name="intervalo_dias" min="0" max="3650" value="<%= c.intervalo_dias %>" required></div><div><label for="sem_retorno">Intervalo sem retorno a outras modalidades (dias)</label><input type="number" id="sem_retorno" name="intervalo_sem_retorno_dias" min="0" max="3650" value="<%= c.intervalo_sem_retorno_dias %>" required></div></div><p class="nota">O intervalo especial mantém a regra atual: apenas uma apometria, um passe e nenhuma outra modalidade no histórico.</p>
+<% } else { %><input type="hidden" name="intervalo_dias" value="<%= c.intervalo_dias %>"><input type="hidden" name="intervalo_sem_retorno_dias" value="<%= c.intervalo_sem_retorno_dias %>"><% } %>
+<% } %>
+<button type="submit" class="btn-atender btn-success">Salvar <%= c.nome %></button></form></details><% }) %>
+<%- include('fim') %>

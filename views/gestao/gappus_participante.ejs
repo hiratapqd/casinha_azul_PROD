@@ -1,0 +1,9 @@
+<%- include('inicio', { titulo: 'GAPPUS — Presenças do participante' }) %>
+<p><a href="/atendimento/gappus">Voltar à lista do grupo</a></p>
+<section class="painel"><h2><%= pessoa.nome %></h2><p><%= pessoa.papel %> — <%= pessoa.cpf ? 'CPF ' + pessoa.cpf : 'Sem CPF informado' %></p><% if (pessoa.vinculo_nome) { %><p>Vínculo: <%= pessoa.vinculo_nome %></p><% } %>
+<p><strong><%= encontros.length %> presença(s) registrada(s)</strong></p><p id="feedback_lista" role="status"></p>
+<% if (pessoa.status === 'Desistiu') { %><p>Desistiu do acompanhamento em <%= formatarData(pessoa.desistencia_em) %>.</p><button type="button" class="btn-atender" data-retomar="<%= pessoa.id %>">Retomar acompanhamento</button><% } else { %><button type="button" class="btn-atender" data-desistir="<%= pessoa.id %>">Registrar desistência</button><% } %>
+</section>
+<div class="tabela"><table><thead><tr><th>Data do encontro</th><th>Responsável</th><th>Ação</th></tr></thead><tbody><% encontros.forEach(e => { %><tr><td><%= formatarData(e._id) %></td><td><%= e.responsavel_nome %></td><td><a href="/atendimento/gappus?data=<%= e._id %>">Abrir encontro</a></td></tr><% }) %><% if (!encontros.length) { %><tr><td colspan="3">Nenhuma presença registrada.</td></tr><% } %></tbody></table></div>
+<script src="/gappus.js"></script>
+<%- include('fim') %>

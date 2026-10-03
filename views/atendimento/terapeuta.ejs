@@ -1,0 +1,11 @@
+<% const terapeutas = typeof voluntarios === 'undefined' ? [] : voluntarios; %>
+<label for="voluntario">Terapeuta responsável:</label>
+<select name="voluntario" id="voluntario" required>
+    <option value="" selected disabled>Selecione o terapeuta</option>
+    <% terapeutas.forEach(voluntario => { %>
+        <option value="<%= voluntario.nome %>"><%= voluntario.nome %></option>
+    <% }) %>
+</select>
+<% if (!terapeutas.length) { %>
+    <p role="status">Nenhum voluntário ativo com disponibilidade cadastrada nesta modalidade. Confira o cadastro dos voluntários.</p>
+<% } %>

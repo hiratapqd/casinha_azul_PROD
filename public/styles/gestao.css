@@ -1,0 +1,24 @@
+.gestao { max-width: 1250px; margin: 32px auto; padding: 0 20px; text-align: left; }
+.gestao h1, .gestao h2 { color: #1277bb; margin: 18px 0; }
+.gestao p { margin: 12px 0; }
+.gestao .painel { padding: 22px; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; background: white; }
+.gestao .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 18px; }
+.gestao label { display: block; font-weight: 600; margin-bottom: 6px; }
+.gestao input:not([type=checkbox]), .gestao select, .gestao textarea { display: block; width: 100%; padding: 10px; border: 1px solid #bbb; border-radius: 4px; font-size: 1rem; }
+.gestao textarea { min-height: 90px; }
+.gestao input[type=checkbox] { margin-right: 8px; }
+.gestao .acoes { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 14px 0; }
+.gestao .acoes a, .gestao .acoes button { cursor: pointer; }
+.gestao .tabela { overflow-x: auto; margin: 18px 0; }
+.gestao table { width: 100%; border-collapse: collapse; }
+.gestao th, .gestao td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; vertical-align: top; }
+.gestao th { background: #1277bb; color: #fff; }
+.gestao #participantes_gappus button[data-desistir] { float: right; margin-left: 12px; }
+.gestao .sucesso { padding: 12px; background: #e5f6e9; color: #155724; border-radius: 5px; }
+.gestao .aviso { color: #8a4300; background: #fff4df; padding: 10px; border-radius: 5px; }
+.gestao .nota { color: #555; font-size: .95rem; }
+.gestao .texto { white-space: pre-wrap; overflow-wrap: anywhere; }
+.gestao details summary { cursor: pointer; color: #1277bb; padding: 12px 0; font-weight: 600; }
+.gestao fieldset { border: 1px solid #ddd; padding: 16px; margin: 16px 0; }
+.gestao legend { font-weight: 600; padding: 0 8px; }
+@media (max-width: 700px) { .gestao { padding: 0 12px; } .gestao .painel { padding: 14px; } }

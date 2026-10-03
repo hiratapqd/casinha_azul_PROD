@@ -1,0 +1,32 @@
+<%- include('inicio', { titulo: 'Escala por data e substituições' }) %>
+<form method="GET" action="/voluntarios/escala-data" class="painel"><div class="campos"><div><label for="filtro_data">Data da escala</label><input type="date" id="filtro_data" name="data" value="<%= data %>" required></div></div><button type="submit" class="btn-atender">Consultar data</button></form>
+<% if (salvo) { %><p class="sucesso" role="status">Escala salva.</p><% } %>
+<p class="nota">A disponibilidade semanal serve como referência. Confirme os horários para esta data. Substituições preservam o voluntário original e seu motivo.</p>
+<h2>Disponibilidade semanal para <%= formatarData(data) %></h2>
+<div class="painel"><% modalidadesEscala.forEach(m => { const disponiveis = voluntarios.filter(v => v.esta_ativo === 'Sim' && (v.disponibilidade?.[m.disponibilidade] || []).includes(dia)); %><p><strong><%= m.nome %>:</strong> <%= disponiveis.map(v => v.nome).join(', ') || 'Nenhum voluntário disponível neste dia.' %></p><% }) %></div>
+<h2>Escala confirmada</h2>
+<% if (!registros.length) { %><p>Nenhuma escala registrada para esta data.</p><% } %>
+<% registros.forEach(e => { %><details class="painel"><summary><%= e.inicio %>–<%= e.fim %> · <%= modalidadesEscala.find(m => m.id === e.modalidade)?.nome || e.modalidade %> · <%= mapa.get(e.cpf_substituto || e.cpf_voluntario)?.nome || 'Voluntário não encontrado' %> · <%= e.status %><%= e.cpf_substituto ? ' (substituição)' : '' %></summary><%- include('escala_form', { registro: e, modalidadesEscala, voluntarios, data }) %></details><% }) %>
+<h2>Adicionar à escala</h2><div class="painel"><%- include('escala_form', { registro: null, modalidadesEscala, voluntarios, data }) %></div>
+<script>
+document.querySelectorAll('.escala-form').forEach(form => {
+    const modalidade = form.elements.modalidade;
+    const inicial = modalidade.value;
+    const seletores = [form.elements.cpf_voluntario, form.elements.cpf_substituto];
+    const vinculados = seletores.map(select => select.value);
+    function filtrar() {
+        seletores.forEach((select, indice) => {
+            Array.from(select.options).forEach(option => {
+                const vinculado = modalidade.value === inicial && option.value === vinculados[indice];
+                const disponivel = !option.value || vinculado || (option.dataset.modalidades || '').split(',').includes(modalidade.value);
+                option.disabled = !disponivel;
+                option.hidden = !disponivel;
+            });
+            if (select.selectedOptions[0]?.disabled) select.value = '';
+        });
+    }
+    modalidade.addEventListener('change', filtrar);
+    filtrar();
+});
+</script>
+<%- include('fim') %>

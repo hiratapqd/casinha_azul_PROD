@@ -1,0 +1,19 @@
+<%- include('inicio', { titulo: 'Ficha do assistido' }) %>
+<div class="acoes"><a href="/assistidos">Voltar à consulta</a></div>
+<% if (salvo) { %><p class="sucesso" role="status">Dados salvos com sucesso.</p><% } %>
+<h2><%= assistido.nome_assistido %></h2><p>CPF: <%= assistido._id %></p>
+<form method="POST" action="/assistidos/<%= encodeURIComponent(assistido._id) %>" class="painel">
+<div class="campos">
+<% const campos = [ ['nome_assistido','Nome completo','text',150], ['telefone_assistido','Telefone / WhatsApp','tel',30], ['email_assistido','E-mail','email',200], ['sexo_assistido','Sexo','text',50], ['religiao_assistido','Religião','text',100], ['cidade_assistido','Cidade','text',100], ['uf_assistido','UF','text',2] ]; campos.forEach(([id,label,tipo,max]) => { %>
+<div><label for="<%= id %>"><%= label %></label><input id="<%= id %>" name="<%= id %>" type="<%= tipo %>" maxlength="<%= max %>" value="<%= assistido[id] || '' %>" <%= id === 'nome_assistido' ? 'required' : '' %>></div><% }) %>
+<div><label for="nascimento">Data de nascimento</label><input type="date" id="nascimento" name="data_nascimento_assistido" max="<%= hoje %>" value="<%= dataNascimentoISO(assistido.data_nascimento_assistido) %>"></div>
+<div><label for="status">Situação</label><select id="status" name="status"><% ['Ativo','Inativo'].forEach(s => { %><option <%= assistido.status === s ? 'selected' : '' %>><%= s %></option><% }) %></select></div>
+</div><p class="nota">O CPF identifica o cadastro e permanece o mesmo ao editar. A inativação preserva o histórico.</p><button type="submit" class="btn-atender btn-success">Salvar cadastro</button></form>
+<h2>Histórico de todas as modalidades</h2><div class="tabela"><table><thead><tr><th>Data</th><th>Modalidade</th><th>Responsável</th><th>Observações</th></tr></thead><tbody>
+<% historico.forEach(a => { %><tr><td><%= formatarData(a.data) %></td><td><%= modalidades.find(m => m.id === a.tipo)?.nome || a.tipo %></td><td><%= a.voluntario %></td><td class="texto"><%= a.observacoes || '—' %><% if (a.plano_atendimento) { %><p>Plano de atendimento: <%= a.plano_atendimento.nome %></p><p><%= a.plano_atendimento.metas.map(m => m.sessoes_previstas + ' ' + (modalidades.find(t => t.id === m.terapia)?.nome || m.terapia)).join(' + ') %></p><% } %><% if (a.data_retorno) { %><p>Retorno: <%= formatarData(a.data_retorno) %></p><% } %></td></tr><% }) %>
+<% if (!historico.length) { %><tr><td colspan="4">Nenhum atendimento registrado.</td></tr><% } %></tbody></table></div>
+<h2>Presenças no GAPPUS</h2><div class="tabela"><table><thead><tr><th>Data do encontro</th><th>Responsável</th><th>Ação</th></tr></thead><tbody>
+<% (typeof encontrosGappus === 'undefined' ? [] : encontrosGappus).forEach(e => { %><tr><td><%= formatarData(e._id) %></td><td><%= e.responsavel_nome %></td><td><a href="/atendimento/gappus?data=<%= e._id %>">Abrir lista</a></td></tr><% }) %>
+<% if (typeof encontrosGappus === 'undefined' || !encontrosGappus.length) { %><tr><td colspan="3">Nenhuma presença registrada no GAPPUS.</td></tr><% } %>
+</tbody></table></div>
+<%- include('fim') %>

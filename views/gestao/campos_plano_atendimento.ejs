@@ -1,0 +1,3 @@
+<div class="campos"><div><label for="nome_<%= chave %>">Nome do plano</label><input id="nome_<%= chave %>" name="nome" maxlength="100" value="<%= plano?.nome || '' %>" required></div>
+<% ['apometria','passe','reiki','auriculo'].forEach(terapia => { %><div><label for="<%= chave %>_<%= terapia %>">Sessões de <%= modalidades.find(m => m.id === terapia).nome %></label><input type="number" id="<%= chave %>_<%= terapia %>" name="sessoes_<%= terapia %>" min="0" max="100" step="1" value="<%= plano?.metas.find(m => m.terapia === terapia)?.sessoes_previstas ?? 0 %>" required></div><% }) %>
+</div><p class="nota">Zero deixa a terapia fora do plano. Informe pelo menos uma sessão.</p>

@@ -1,0 +1,1 @@
+passe, reiki, evangelho no lar, oração do perdão
