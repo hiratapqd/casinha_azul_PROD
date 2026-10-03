@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { formatarDataHora } = require('../utils/operacao');
 
 const connectDB = async () => {
     try {
@@ -8,7 +9,7 @@ const connectDB = async () => {
             socketTimeoutMS: 45000,
         });
     } catch (err) {
-        const agora = new Date().toLocaleString('pt-BR');
+        const agora = formatarDataHora(new Date());
         console.error(`[${agora}] Erro critico na conexao com MongoDB:`, err.message);
 
         process.exit(1);

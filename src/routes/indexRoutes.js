@@ -9,6 +9,26 @@ const atendimentoController = require('../controllers/AtendimentoController');
 const relatorioController = require('../controllers/RelatorioController');
 const livrariaController = require('../controllers/LivrariaController');
 const RecepcaoController = require('../controllers/RecepcaoController');
+const gestaoController = require('../controllers/GestaoController');
+const gappusController = require('../controllers/GappusController');
+const { listarPlanosApometria } = require('../services/PlanosApometria');
+const Voluntario = require('../models/Voluntario');
+const { MODALIDADES } = require('../utils/operacao');
+
+router.get('/assistidos', gestaoController.listarAssistidos);
+router.get('/assistidos/:cpf', gestaoController.fichaAssistido);
+router.post('/assistidos/:cpf', gestaoController.salvarAssistido);
+router.get('/acompanhamentos', gestaoController.acompanhamentos);
+router.get('/acompanhamentos/novo', gestaoController.formPlano);
+router.get('/acompanhamentos/:id/editar', gestaoController.formPlano);
+router.post('/acompanhamentos', gestaoController.salvarPlano);
+router.post('/acompanhamentos/:id', gestaoController.salvarPlano);
+router.get('/configuracoes', gestaoController.configuracoes);
+router.post('/configuracoes/planos/:modelo', gestaoController.salvarModeloPlano);
+router.post('/configuracoes/:terapia', gestaoController.salvarConfiguracao);
+router.get('/voluntarios/escala-data', gestaoController.escala);
+router.post('/voluntarios/escala-data', gestaoController.salvarEscala);
+router.post('/voluntarios/escala-data/:id', gestaoController.salvarEscala);
 
 const formulariosAtendimento = {
     reiki: {
@@ -86,7 +106,20 @@ const formulariosAtendimento = {
 };
 
 function renderFormularioAtendimento(chave) {
-    return (req, res) => res.render('atendimento/formulario_padrao', formulariosAtendimento[chave]);
+    const apometria = chave === 'apometria';
+    const dados = apometria ? { tipo: 'apometria' } : formulariosAtendimento[chave];
+    return async (req, res, next) => {
+        try {
+            const modalidade = MODALIDADES.find(m => m.id === dados.tipo);
+            const voluntarios = await Voluntario.find({
+                esta_ativo: 'Sim',
+                [`disponibilidade.${modalidade.disponibilidade}.0`]: { $exists: true }
+            }).sort({ nome: 1 }).lean();
+            res.render(apometria ? 'atendimento/apometrico' : 'atendimento/formulario_padrao', {
+                ...dados, voluntarios, ...(apometria ? { planosApometria: await listarPlanosApometria() } : {})
+            });
+        } catch (erro) { next(erro); }
+    };
 }
 
 // --- ROTA PRINCIPAL (DASHBOARD) ---
@@ -119,7 +152,15 @@ router.post('/atendimento/solicitacao', solicitacaoController.criarSolicitacaoCo
 router.post('/atendimento/salvar', atendimentoController.salvarAtendimento);
 
 // --- ROTAS DE ATENDIMENTO (VIEWS) ---
-router.get('/atendimento/apometrico', (req, res) => res.render('atendimento/apometrico'));
+router.get('/atendimento/apometrico', renderFormularioAtendimento('apometria'));
+router.get('/atendimento/gappus', gappusController.formulario);
+router.post('/atendimento/gappus', gappusController.salvar);
+router.get('/api/gappus/participantes', gappusController.buscarParticipantes);
+router.post('/api/gappus/participantes', gappusController.adicionarParticipante);
+router.post('/api/gappus/participantes/:id/incluir', gappusController.incluirExistente);
+router.post('/api/gappus/participantes/:id/desistir', gappusController.desistir);
+router.post('/api/gappus/participantes/:id/retomar', gappusController.retomar);
+router.get('/gappus/participantes/:id', gappusController.presencasParticipante);
 router.get('/atendimento/reiki', renderFormularioAtendimento('reiki'));
 router.get('/atendimento/auriculo', renderFormularioAtendimento('auriculo'));
 router.get('/atendimento/maos_sem_fronteiras', renderFormularioAtendimento('maosSemFronteiras'));

@@ -3,6 +3,7 @@
 
 <main class="hero">
     <h1>Check-in de Assistido</h1>
+    <p>Para o grupo de apoio GAPPUS, use a <a href="/atendimento/gappus">lista de presença por encontro</a>.</p>
     
     <div class="form-container">
         <div class="form-group">
@@ -37,7 +38,7 @@
                                     value="<%= valorProcessado %>"
                                     id="chk_<%= valorProcessado %>">
                                 <label for="chk_<%= valorProcessado %>" style="text-transform: capitalize;">
-                                    <%= valorOriginal %>
+                                    <%= regra.nome || valorOriginal %>
                                 </label>
                             </div>
                         <% } %>
@@ -125,6 +126,9 @@
             if (resp.ok) {
                 await Swal.fire('Sucesso', 'Assistido enviado para as filas!', 'success');
                 window.location.reload();
+            } else {
+                const erro = await resp.json().catch(() => null);
+                await Swal.fire('Atenção', erro?.error || 'Não foi possível registrar o check-in.', 'warning');
             }
         } catch (err) {
             Swal.fire('Erro', 'Falha ao registrar check-in', 'error');

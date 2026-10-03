@@ -78,7 +78,7 @@
     const qt = document.getElementById("qt");
 
     function fmtData(d) {
-      try { return new Date(d).toLocaleString("pt-BR"); } catch { return ""; }
+      return CasinhaDatas.formatarDataHora(d);
     }
 
     let currentKey = "d60";

@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="/styles/styles.css">
 <main>
 
-    <table>
+    <table class="fila-atendimento">
         <thead>
             <tr>
                 <th>Nome</th>
@@ -23,11 +23,11 @@
                                             <%= item.tipo %>
                         </td>
                         <td>
-                            <span class="status-badge <%= item.status === 'Em Atendimento' ? 'atendimento' : '' %>">
+                            <span class="status-badge <%= { 'Confirmado': 'status-confirmado', 'Atendido': 'status-atendido', 'Espera': 'status-espera', 'Em Atendimento': 'status-em-atendimento' }[item.status] || '' %>">
                                 <%= item.status %>
                             </span>
                         </td>
-                        <td><%= item.data_pedido.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) %></td>
+                        <td><%= item.data_pedido.toLocaleTimeString('pt-BR', { timeZone: 'Etc/GMT+3', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) %></td>
                         <td>
                                 <% if (item.status === 'Confirmado' || item.status === 'Espera'|| item.status === 'Aguardando') { %>
                                 <a href="/atendimento/iniciar/<%= item._id %>" class="btn-atender">Atender</a>

@@ -1,5 +1,9 @@
 const Atendimento = require('../models/Atendimento');
 const Voluntario = require('../models/Voluntario');
+const EscalaData = require('../models/EscalaData');
+const EncontroGappus = require('../models/EncontroGappus');
+const { datasPresencasGappus } = require('../services/AcompanhamentosHistoricos');
+const { hojeLocal, inicioDia, fimDia, diaSemana, DIAS_ABREV, MODALIDADES, dataISO } = require('../utils/operacao');
 
 function normalizarCpf(cpf = '') {
     return String(cpf).replace(/\D/g, '');
@@ -15,13 +19,6 @@ function formatarPercentualTruncado(valor, total) {
     const percentual = (valor / total) * 100;
     return (Math.floor(percentual * 100) / 100).toFixed(2);
 }
-
-// --- FUNÇÃO AUXILIAR PARA PEGAR DATA EM GMT-3 ---
-const getDataBrasilia = () => {
-    const agora = new Date();
-    const brasiliaTime = new Date(agora.getTime() - (3 * 60 * 60 * 1000));
-    return brasiliaTime;
-};
 
 // --- FUNÇÕES AUXILIARES DE CÁLCULO ---
 const calcularEquipeAtiva = (voluntarios, mapa) => {
@@ -41,13 +38,7 @@ const calcularEquipeAtiva = (voluntarios, mapa) => {
 };
 
 const calcularEscalaHoje = (voluntarios, mapa) => {
-    // Usamos a função de fuso horário que você já tem para garantir a data correta do Brasil
-    const hojeBrasilia = getDataBrasilia(); 
-    
-    const hojeAbrev = hojeBrasilia.toLocaleDateString('pt-BR', { weekday: 'short' })
-                                .toLowerCase()
-                                .replace('.', '') 
-                                .substring(0, 3); 
+    const hojeAbrev = DIAS_ABREV[diaSemana(hojeLocal())];
 
     const escala = [];
     voluntarios.forEach(v => {
@@ -65,6 +56,7 @@ const calcularEscalaHoje = (voluntarios, mapa) => {
 };
 
 const calcularAbandonoApometria = async () => {
+    const presencasGappus = datasPresencasGappus(await EncontroGappus.find().lean());
     const historico = await Atendimento.find(
         { cpf_assistido: { $exists: true, $nin: [null, ''] } },
         { cpf_assistido: 1, tipo: 1, data: 1 }
@@ -89,7 +81,7 @@ const calcularAbandonoApometria = async () => {
     let totalComApometria = 0;
     let totalAbandonos = 0;
 
-    historicosPorCpf.forEach((atendimentos) => {
+    historicosPorCpf.forEach((atendimentos, cpf) => {
         atendimentos.sort((a, b) => a.data - b.data);
 
         const indiceUltimaApometria = atendimentos
@@ -113,7 +105,8 @@ const calcularAbandonoApometria = async () => {
             return atendimento.tipo !== 'apometria' && atendimento.tipo !== 'passe';
         });
 
-        if (temPasseNoCiclo && !teveOutroAtendimentoDepois) {
+        const retornouGappus = presencasGappus.get(cpf) >= dataISO(atendimentos[indiceUltimaApometria].data);
+        if (temPasseNoCiclo && !teveOutroAtendimentoDepois && !retornouGappus) {
             totalAbandonos++;
         }
     });
@@ -127,13 +120,9 @@ const calcularAbandonoApometria = async () => {
 
 exports.getDashboard = async (req, res) => {
     try {
-        const hojeBrasilia = getDataBrasilia();
+        const hojeInicio = inicioDia(hojeLocal());
         
-        const hojeInicio = new Date(hojeBrasilia);
-        hojeInicio.setUTCHours(0, 0, 0, 0);
-        
-        const hojeFim = new Date(hojeBrasilia);
-        hojeFim.setUTCHours(23, 59, 59, 999);
+        const hojeFim = fimDia(hojeLocal());
 
         // 1. Buscas no Banco (Campo 'data' conforme o print)
         const [totalAtendimentosHoje, voluntariosDB] = await Promise.all([
@@ -181,13 +170,25 @@ exports.getDashboard = async (req, res) => {
             "Mãos sem Fronteiras": ["maos"],
             "Homeopatia": ["homeopatia"],
             "Passe": ["passe"],
+            "GAPPUS": ["gappus"],
             "Cantina": ["cantina"],
             "Mesa": ["mesa"]
         };
 
         const voluntariosPorTipo = calcularEquipeAtiva(voluntariosDB, mapaGeral);
-        const escala_hoje = calcularEscalaHoje(voluntariosDB, mapaGeral);
+        const escalasData = await EscalaData.find({ data: hojeLocal() }).lean();
+        let escala_hoje = calcularEscalaHoje(voluntariosDB, mapaGeral);
+        if (escalasData.length) {
+            const cpfs = escalasData.map(e => e.cpf_substituto || e.cpf_voluntario);
+            const escalados = await Voluntario.find({ _id: { $in: cpfs } }).lean();
+            const nomes = new Map(escalados.map(v => [v._id, v.nome]));
+            escala_hoje = escalasData.filter(e => e.status === 'Confirmado').map(e => ({
+                nome: `${nomes.get(e.cpf_substituto || e.cpf_voluntario) || 'Voluntário não encontrado'} (${e.inicio}–${e.fim})${e.cpf_substituto ? ' · substituto' : ''}`,
+                tipo: MODALIDADES.find(m => m.id === e.modalidade)?.nome || (e.modalidade === 'cantina' ? 'Cantina' : 'Mesa')
+            }));
+        }
 
+        const encontroGappusHoje = await EncontroGappus.findById(hojeLocal()).lean();
         res.render('index', {
             resumo: {
                 hoje: totalAtendimentosHoje,
@@ -195,10 +196,12 @@ exports.getDashboard = async (req, res) => {
                 apometriaUnica: abandonoApometria.totalAbandonos,
                 totalBaseApometria: abandonoApometria.totalBase,
                 detalheAtendimentos: atendimentosHoje,
+                gappusHoje: encontroGappusHoje?.participantes.length || 0,
                 voluntariosPorTipo,
                 totalVoluntarios: voluntariosDB.length
             },
-            escala_hoje
+            escala_hoje,
+            escalaPorData: escalasData.length > 0
         });
 
     } catch (err) {

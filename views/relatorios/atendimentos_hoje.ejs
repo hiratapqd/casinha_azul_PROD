@@ -94,7 +94,7 @@
     const tabs = document.querySelectorAll(".tab");
 
     function fmt(dateStr) {
-        return new Date(dateStr).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return CasinhaDatas.formatarHora(dateStr);
     }
 
     function filtrar() {

@@ -42,6 +42,7 @@
                 <span class="label">Homeopatia:</span>
                 <span class="value"><%= resumo.detalheAtendimentos.homeopatia %></span>
             </div>
+            <div class="stat-item"><span class="label">Presenças GAPPUS:</span><span class="value"><%= resumo.gappusHoje || 0 %></span></div>
         </div>
     </div>
         <div class="card alerta">
@@ -52,7 +53,8 @@
     </div>
 
 <section class="voluntarios-dia">
-    <h2>Escala do Dia - <%= new Date().toLocaleDateString('pt-BR') %></h2>
+    <h2>Escala do Dia - <%= new Date().toLocaleDateString('pt-BR', { timeZone: 'Etc/GMT+3' }) %></h2>
+    <p><%= escalaPorData ? 'Escala confirmada para esta data.' : 'Referência da disponibilidade semanal; confirme a escala por data.' %> <a href="/voluntarios/escala-data">Gerenciar escala</a></p>
     <div class="escala-container">
         <% 
            const gruposDia = {};

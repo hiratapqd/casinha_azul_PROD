@@ -4,6 +4,10 @@ const LimiteSchema = new mongoose.Schema({
     tipo: { type: String, required: true, unique: true }, 
     limite_principal: { type: Number },
     limite_espera: { type: Number, default: 0 },
+    limites_espera: {
+        segunda: Number, terca: Number, quarta: Number, quinta: Number,
+        sexta: Number, sabado: Number, domingo: Number
+    },
     limites: {
         segunda: Number,
         terca: Number,

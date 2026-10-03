@@ -27,7 +27,7 @@
                         <tr>
                             <td><strong><%= v.nome || 'Nao informado' %></strong></td>
                             <td><%= v.cpf || v._id || '-' %></td>
-                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
+                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR', { timeZone: 'Etc/GMT+3' }) : '-' %></td>
                         </tr>
                     <% }) %>
                 <% } else { %>

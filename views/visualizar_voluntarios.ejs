@@ -29,6 +29,7 @@
                 <option value="maos" <%= filtros.terapia === 'maos' ? 'selected' : '' %>>Maos Sem Fronteiras</option>
                 <option value="homeopatia" <%= filtros.terapia === 'homeopatia' ? 'selected' : '' %>>Homeopatia</option>
                 <option value="passe" <%= filtros.terapia === 'passe' ? 'selected' : '' %>>Passe</option>
+                <option value="gappus" <%= filtros.terapia === 'gappus' ? 'selected' : '' %>>GAPPUS</option>
                 <option value="cantina" <%= filtros.terapia === 'cantina' ? 'selected' : '' %>>Cantina</option>
                 <option value="mesa" <%= filtros.terapia === 'mesa' ? 'selected' : '' %>>Mesa</option>
             </select>
@@ -57,7 +58,7 @@
                             <td><%= v.nome %></td>
                             <td><%= v.telefone || 'N/A' %></td>
                             <td><%= v.mediunidade || '-' %></td>
-                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR') : '-' %></td>
+                            <td><%= v.ultimaParticipacao ? new Date(v.ultimaParticipacao).toLocaleDateString('pt-BR', { timeZone: 'Etc/GMT+3' }) : '-' %></td>
                         </tr>
                     <% }) %>
                 <% } else { %>

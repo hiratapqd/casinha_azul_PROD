@@ -1,9 +1,11 @@
 const Assistido = require('../models/Assistido');
+const { dataValida, inicioDia } = require('../utils/operacao');
 
 exports.criarAssistido = async (req, res) => {
     
     try {
         const dados = req.body;
+        if (dados.data_nascimento_assistido && !dataValida(dados.data_nascimento_assistido)) return res.status(400).json({ status: 'erro', mensagem: 'Data de nascimento inválida.' });
         // 1. Verifica se o assistido já existe (usando o CPF como _id)
         const cpfLimpo = (dados.cpf_assistido || dados.cpf) ? (dados.cpf_assistido || dados.cpf).replace(/\D/g, '') : null;
         if (!cpfLimpo) {
@@ -24,14 +26,14 @@ exports.criarAssistido = async (req, res) => {
             _id: cpfLimpo,
             nome_assistido: dados.nome_assistido,
             telefone_assistido: dados.telefone_assistido,
-            data_nascimento_assistido: dados.data_nascimento_assistido,
+            data_nascimento_assistido: dados.data_nascimento_assistido ? inicioDia(dados.data_nascimento_assistido) : null,
             sexo_assistido: dados.sexo_assistido,
             religiao_assistido: dados.religiao_assistido,
             cidade_assistido: dados.cidade_assistido,
             uf_assistido: dados.uf_assistido,
             email_assistido: dados.email_assistido,
             status: "Ativo",
-            dataCadastro: new Date().toISOString().split('T')[0]
+            dataCadastro: new Date()
         });
 
         // 4. Salva no banco de dados casinha_azul

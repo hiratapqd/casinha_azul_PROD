@@ -26,8 +26,7 @@
             </div>
 
             <div class="form-group">
-                <label>Terapeuta Responsavel:</label>
-                <input type="text" name="voluntario" required>
+                <%- include('terapeuta') %>
             </div>
         </div>
 
@@ -38,6 +37,9 @@
             </div><br>
         <% } %>
 
+        <% if (tipo === 'homeopatia') { %>
+        <div class="form-group"><label for="data_retorno">Data do retorno de homeopatia:</label><input type="date" name="data_retorno" id="data_retorno" required><p>O retorno será exibido na ficha e no acompanhamento do assistido.</p></div>
+        <% } %>
         <button type="submit" class="btn-atender btn-success"><%= botaoTexto %></button>
     </form><br><br>
 
@@ -69,8 +71,10 @@
     sufixoQueixa: <%- JSON.stringify(typeof sufixoQueixa !== 'undefined' ? sufixoQueixa : '') %>
   };
 
-  const dataHoje = new Date().toISOString().split('T')[0];
+  const dataHoje = CasinhaDatas.hojeLocal();
   document.getElementById('campo_data').value = dataHoje;
+  const campoRetorno = document.getElementById('data_retorno');
+  if (campoRetorno) campoRetorno.min = CasinhaDatas.somarDiasISO(dataHoje, 1);
   const campoCpf = document.getElementById('cpf_assistido');
   let ultimoCpfSemCadastroAlertado = '';
   let ultimoCpfIncompletoAlertado = '';
@@ -101,10 +105,10 @@
 
     corpo.innerHTML = lista.map(item => {
       const terapeuta = item.nome_voluntario || item.voluntario || '-';
-      const observacoes = item.observacoes_atendimento || item.observacoes || '-';
+      const observacoes = (item.observacoes_atendimento || item.observacoes || '-') + (item.data_retorno ? '\nRetorno: ' + CasinhaDatas.formatarData(item.data_retorno) : '');
       return `
         <tr>
-          <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+          <td>${CasinhaDatas.formatarData(item.data)}</td>
           <td>${terapeuta}</td>
           <td>${observacoes}</td>
         </tr>

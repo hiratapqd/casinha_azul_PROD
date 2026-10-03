@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
 const SolicitacaoSchema = new mongoose.Schema({
+    finalizacao_atendimento: { type: mongoose.Schema.Types.ObjectId, ref: 'Atendimento' },
+    passe_pos_apometria: { type: Boolean },
+    apometria_origem: { type: mongoose.Schema.Types.ObjectId, ref: 'Atendimento' },
     _id: { type: String }, // CPF_YYYY-MM-DD
     nome_assistido: { type: String, required: true },
     idade_assistido: Number,

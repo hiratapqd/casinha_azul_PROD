@@ -251,7 +251,7 @@ function gerarResumo(documents) {
     const item = resumo.get(document.livro_id);
     item.quantidadeRegistros += 1;
     item.quantidadeVendida += document.quantidade;
-    item.datas.push(document.data_venda.toISOString().slice(0, 10));
+    item.datas.push(require('../src/utils/operacao').dataISO(document.data_venda));
   });
 
   return resumo;

@@ -18,6 +18,7 @@ const VoluntarioSchema = new mongoose.Schema({
         maos: [String],
         homeopatia: [String],
         passe: [String],
+        gappus: [String],
         cantina: [String],
         mesa: [String]
     }

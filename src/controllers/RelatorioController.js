@@ -2,6 +2,9 @@ const Atendimento = require('../models/Atendimento');
 const Assistido = require('../models/Assistido');
 const Voluntario = require('../models/Voluntario');
 const PresencaVoluntario = require('../models/PresencaVoluntario');
+const EncontroGappus = require('../models/EncontroGappus');
+const { datasPresencasGappus } = require('../services/AcompanhamentosHistoricos');
+const { hojeLocal, inicioDia, fimDia, somarDiasISO, formatarData, dataISO } = require('../utils/operacao');
 
 function normalizarTipo(tipo = '') {
     return String(tipo).trim().toLowerCase();
@@ -51,13 +54,9 @@ function consolidarPresencasPorCpf(registros = []) {
 
 exports.getAtendimentosHoje = async (req, res) => {
     try {
-        const agora = new Date();
-        const offsetBrasilia = -3;
-        const dataBrasilia = new Date(agora.getTime() + (offsetBrasilia * 60 * 60 * 1000));
-        const hojeString = dataBrasilia.toISOString().split('T')[0];
-
-        const hojeInicio = new Date(`${hojeString}T00:00:00-03:00`);
-        const hojeFim = new Date(`${hojeString}T23:59:59-03:00`);
+        const hojeString = hojeLocal();
+        const hojeInicio = inicioDia(hojeString);
+        const hojeFim = fimDia(hojeString);
 
         const atendimentos = await Atendimento.find({
             data: { $gte: hojeInicio, $lte: hojeFim }
@@ -93,7 +92,7 @@ exports.getAtendimentosHoje = async (req, res) => {
             atendimentos,
             counts,
             tabs,
-            hoje: dataBrasilia.toLocaleDateString('pt-BR')
+            hoje: formatarData(hojeString)
         });
     } catch (err) {
         console.error('Erro no RelatorioController:', err);
@@ -164,9 +163,7 @@ exports.getRelatorioGeralAssistidos = async (req, res) => {
 
 exports.getRelatorioVoluntarios = async (req, res) => {
     try {
-        const dataLimite = new Date();
-        dataLimite.setDate(dataLimite.getDate() - 30);
-        dataLimite.setHours(0, 0, 0, 0);
+        const dataLimite = inicioDia(somarDiasISO(hojeLocal(), -30));
 
         const presencasAgrupadas = await PresencaVoluntario.aggregate([
             {
@@ -211,9 +208,7 @@ exports.getRelatorioVoluntarios = async (req, res) => {
 
 exports.getVoluntariosInativos = async (req, res) => {
     try {
-        const dataLimite = new Date();
-        dataLimite.setDate(dataLimite.getDate() - 90);
-        dataLimite.setHours(0, 0, 0, 0);
+        const dataLimite = inicioDia(somarDiasISO(hojeLocal(), -90));
 
         const voluntariosAtivos = await Voluntario.find({
             esta_ativo: { $nin: ['Não', 'Nao', 'não', 'nao'] }
@@ -285,19 +280,11 @@ exports.getVoluntariosInativos = async (req, res) => {
 
 exports.getApometriaInativos = async (req, res) => {
     try {
-        const hoje = new Date();
-
-        const data30 = new Date();
-        data30.setDate(hoje.getDate() - 30);
-        data30.setHours(23, 59, 59, 999);
-
-        const data60 = new Date();
-        data60.setDate(hoje.getDate() - 60);
-        data60.setHours(23, 59, 59, 999);
-
-        const data90 = new Date();
-        data90.setDate(hoje.getDate() - 90);
-        data90.setHours(23, 59, 59, 999);
+        const presencasGappus = datasPresencasGappus(await EncontroGappus.find().lean());
+        const hoje = hojeLocal();
+        const data30 = fimDia(somarDiasISO(hoje, -30));
+        const data60 = fimDia(somarDiasISO(hoje, -60));
+        const data90 = fimDia(somarDiasISO(hoje, -90));
 
         const historicosPorAssistido = await Atendimento.aggregate([
             {
@@ -348,7 +335,8 @@ exports.getApometriaInativos = async (req, res) => {
                 return atendimento.tipo !== 'apometria' && atendimento.tipo !== 'passe';
             });
 
-            if (!temPasseNoCiclo || teveOutroAtendimentoDepois) {
+            const retornouGappus = presencasGappus.get(normalizarCpf(registro._id)) >= dataISO(ultimaApometria.data);
+            if (!temPasseNoCiclo || teveOutroAtendimentoDepois || retornouGappus) {
                 return acc;
             }
 

@@ -3,6 +3,8 @@ const express = require('express');
 const path = require('path');
 const connectDB = require('./src/config/db');
 const app = express();
+const { listarConfiguracoes } = require('./src/services/ConfiguracaoOperacao');
+const { MODALIDADES } = require('./src/utils/operacao');
 
 const indexRoutes = require('./src/routes/indexRoutes');
 
@@ -18,24 +20,9 @@ app.use(async (req, res, next) => {
     try {
         const mongoose = require('mongoose');
         const db = mongoose.connection.db;
-        let terapiasAtivas = [];
-
-        if (db) {
-            terapiasAtivas = await db.collection('terapias')
-                .find({ ativa: true })
-                .sort({ ordem: 1 })
-                .toArray();
-        }
-
-        if (!terapiasAtivas || terapiasAtivas.length === 0) {
-            terapiasAtivas = [
-                { nome: 'Apometria', slug: 'apometria' },
-                { nome: 'Reiki', slug: 'reiki' },
-                { nome: 'Auriculo', slug: 'auriculo' }
-            ];
-        }
-
-        res.locals.terapias = terapiasAtivas;
+        res.locals.terapias = db
+            ? (await listarConfiguracoes()).filter(t => t.ativa)
+            : MODALIDADES;
         next();
     } catch (err) {
         console.error('Erro no middleware de terapias:', err);
@@ -47,4 +34,6 @@ app.use(async (req, res, next) => {
 app.use('/', indexRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT);
+app.listen(PORT, () => {
+    console.log(`Aplicação iniciada com sucesso! Acesse: http://localhost:${PORT}`);
+});

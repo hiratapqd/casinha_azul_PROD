@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 const TerapiaSchema = new mongoose.Schema({
     terapia: { type: String, required: true, unique: true }, 
+    nome: String,
+    slug: String,
+    ativa: { type: Boolean, default: true },
+    ordem: Number,
     limites: {
         segunda: { type: Number, default: 0 },
         terca: { type: Number, default: 0 },

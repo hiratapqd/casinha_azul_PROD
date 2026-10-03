@@ -132,7 +132,7 @@
                         </td>
                         <td>
                             <% if (livro.ultimaVenda) { %>
-                                <%= livro.ultimaVenda.toLocaleDateString('pt-BR') %><br>
+                                <%= livro.ultimaVenda.toLocaleDateString('pt-BR', { timeZone: 'Etc/GMT+3' }) %><br>
                                 <small style="color: #777;"><%= livro.diasSemVenda %> dias sem venda</small>
                             <% } else { %>
                                 <span style="color: #999;">Nunca vendeu</span>

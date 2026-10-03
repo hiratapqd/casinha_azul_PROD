@@ -64,10 +64,8 @@ const EVENTOS_DEMO = [
 ];
 
 function dataDiasAtras(dias) {
-    const data = new Date();
-    data.setHours(12, 0, 0, 0);
-    data.setDate(data.getDate() - dias);
-    return data;
+    const { hojeLocal, somarDiasISO } = require('../src/utils/operacao');
+    return new Date(`${somarDiasISO(hojeLocal(), -dias)}T12:00:00-03:00`);
 }
 
 function montarAtendimentosDemo() {
@@ -97,7 +95,7 @@ async function main() {
     console.log(`Cenário demonstração inserido com sucesso: ${atendimentos.length} atendimentos.`);
     atendimentos.forEach((item) => {
         console.log(
-            `${item.cpf_assistido} | ${item.tipo} | ${item.data.toLocaleDateString('pt-BR')} | ${item.nome_assistido}`
+            `${item.cpf_assistido} | ${item.tipo} | ${item.data.toLocaleDateString('pt-BR', { timeZone: 'Etc/GMT+3' })} | ${item.nome_assistido}`
         );
     });
 }

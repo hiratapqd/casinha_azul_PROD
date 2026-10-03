@@ -1,6 +1,6 @@
 <footer class="main-footer">
     <div class="footer-container">
-        <p>&copy; <%= new Date().getFullYear() %> Casinha Azul - Todos os direitos reservados.</p>
+        <p>&copy; <%= new Intl.DateTimeFormat('pt-BR', { timeZone: 'Etc/GMT+3', year: 'numeric' }).format(new Date()) %> Casinha Azul - Todos os direitos reservados.</p>
         <div class="footer-credits">
             Desenvolvido por <a href="mailto:hiratabruno@yahoo.com" class="credit-link">Nebula Tech Consulting</a>
         </div>

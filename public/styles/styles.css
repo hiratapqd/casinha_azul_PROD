@@ -23,6 +23,15 @@ nav {
 .menu {
     list-style: none;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+nav { height: auto; min-height: 120px; }
+.menu .dropdown:focus-within > .dropdown-content { display: block; }
+@media (max-width: 900px) {
+    nav { flex-wrap: wrap; padding-bottom: 12px; }
+    .menu a { padding: 12px; }
 }
 
 .menu > li {
@@ -106,6 +115,32 @@ nav {
 
 .form-row .form-group {
     flex: 1;     margin-bottom: 0; }
+
+.ficha-apometria .form-row {
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.plano-acompanhamento-row {
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.plano-acompanhamento-row > label { flex: 0 0 auto; white-space: nowrap; margin: 0; }
+.plano-acompanhamento-row .acompanhamentos-adicionais { flex: 0 0 auto; }
+
+.plano-acompanhamento-row .form-group {
+    flex: 0 1 33%;
+    min-width: 0;
+}
+.plano-acompanhamento-row select { width: 100%; }
+.acompanhamentos-adicionais { display: flex; flex-wrap: wrap; gap: 16px; padding: 6px 0; }
+.acompanhamentos-adicionais label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+@media (max-width: 600px) {
+    .plano-acompanhamento-row { flex-wrap: wrap; align-items: stretch; }
+    .plano-acompanhamento-row .form-group { flex: none; width: 100%; }
+}
 
 
 .flex-2 {
@@ -338,6 +373,26 @@ th {
 .status-badge.atendimento {
     background: #28a745;
     color: white;
+}
+
+.fila-atendimento .status-badge.status-confirmado {
+    background: #198754;
+    color: white;
+}
+
+.fila-atendimento .status-badge.status-atendido {
+    background: #1277bb;
+    color: white;
+}
+
+.fila-atendimento .status-badge.status-espera {
+    background: #dc3545;
+    color: white;
+}
+
+.fila-atendimento .status-badge.status-em-atendimento {
+    background: #ffc107;
+    color: #212529;
 }
 
 .btn-atender, .btn-confirmar {

@@ -1,5 +1,6 @@
 const Livro = require('../models/Livro');
 const Venda = require('../models/Venda');
+const { inicioMes } = require('../utils/operacao');
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
 const PERIODOS_MOVIMENTACAO = [30, 60, 90, 180, 365];
@@ -18,11 +19,6 @@ const somarQuantidade = (vendas) => vendas.reduce((acc, v) => acc + (Number(v.qu
 const getDiasSemVenda = (hoje, ultimaVenda) => {
     if (!ultimaVenda) return null;
     return Math.floor((hoje.getTime() - ultimaVenda.getTime()) / UM_DIA_MS);
-};
-
-const getDataBrasilia = () => {
-    const agora = new Date();
-    return new Date(agora.getTime() - (3 * 60 * 60 * 1000));
 };
 
 exports.getCadastroLivro = (req, res) => {
@@ -55,7 +51,7 @@ exports.salvarLivro = async (req, res) => {
             preco_venda: parseFloat(preco_venda) || 0,
             estoque_atual: parseInt(estoque_inicial) || 2,
             estoque_minimo: parseInt(estoque_minimo) || 2,
-            data_cadastro: getDataBrasilia()
+            data_cadastro: new Date()
         });
 
         await novoLivro.save();
@@ -76,7 +72,7 @@ exports.getEstoque = async (req, res) => {
         const vendasGerais = await Venda.find().lean();
 
         const hoje = new Date();
-        const inicioDoMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        const inicioDoMes = inicioMes(hoje);
         
         // Datas de corte para giro e reposicao
         const data60 = getDataCorte(hoje, 60);

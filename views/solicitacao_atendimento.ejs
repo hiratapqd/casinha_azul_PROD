@@ -21,7 +21,7 @@
             <div class="form-group">
                 <label for="data">Data do Atendimento:</label>
                 <input type="date" id="data" name="data"
-                       value="<%= new Date().toLocaleDateString('en-CA') %>" required>
+                       value="<%= new Date().toLocaleDateString('en-CA', { timeZone: 'Etc/GMT+3' }) %>" required>
             </div>
         </div>
 
@@ -145,7 +145,7 @@ document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
     if (historico.length > 0) {
         container.style.display = 'block';
         historico.forEach(h => {
-            const data = new Date(h.data_pedido).toLocaleDateString('pt-BR');
+            const data = CasinhaDatas.formatarData(h.data_pedido);
             tbody.innerHTML += `<tr><td>${data}</td><td>${h.voluntario || '-'}</td><td>${h.queixa_motivo}</td><td>${h.status}</td></tr>`;
         });
     } else {
@@ -166,7 +166,7 @@ document.getElementById('cpf_assistido').addEventListener('blur', async (e) => {
             document.getElementById('telefone').value = assistido.telefone_assistido || '';
 
             if (assistido.data_nascimento_assistido) {
-                const dataIso = new Date(assistido.data_nascimento_assistido).toISOString().split('T')[0];
+                const dataIso = CasinhaDatas.dataNascimentoISO(assistido.data_nascimento_assistido);
                 document.getElementById('data_nascimento').value = dataIso;
             }
         }

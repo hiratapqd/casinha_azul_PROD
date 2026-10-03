@@ -29,6 +29,8 @@ async function run() {
             'terapias',
             'vendas',
             'presencas_voluntarios',
+            'planos_acompanhamento',
+            'escalas_datas',
             'voluntarios'
         ];
 

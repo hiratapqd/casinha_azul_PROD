@@ -2,42 +2,48 @@
 const Solicitacao = require('../models/Solicitacao');
 const Atendimento = require('../models/Atendimento');
 const Assistido = require('../models/Assistido');
-const LimiteAtendimento = require('../models/LimiteAtendimento');
+const { listarConfiguracoes } = require('../services/ConfiguracaoOperacao');
+const { hojeLocal, dataValida, inicioDia, fimDia, diaSemana, formatarData, calcularIdade, DIAS } = require('../utils/operacao');
 
 exports.criarSolicitacaoComCadastro = async (req, res) => {
     try {
         const dados = req.body;
         const tipoParaBusca = 'apometria';
+        dados.cpf_assistido = String(dados.cpf_assistido || '').replace(/\D/g, '');
+        if (dados.cpf_assistido.length !== 11 || !dataValida(dados.data) || !String(dados.nome || '').trim()) {
+            return res.status(400).json({ status: 'erro', mensagem: 'Informe CPF, nome e uma data válida para a solicitação.' });
+        }
+        const configOperacao = (await listarConfiguracoes()).find(c => c.id === tipoParaBusca);
+        if (!configOperacao.ativa) return res.status(400).json({ status: 'erro', mensagem: 'A apometria está inativa nas configurações.' });
+        if (await Solicitacao.exists({ _id: `${dados.cpf_assistido}_${dados.data}` })) return res.json({ status: 'duplicado', mensagem: 'Este CPF já possui uma solicitação hoje.' });
 
         const agoraUTC = new Date();
-        const brasiliaTime = new Date(agoraUTC.getTime() - (3 * 60 * 60 * 1000));
 
-        const hojeInicio = new Date(`${dados.data}T00:00:00-03:00`);
-        const hojeFim = new Date(`${dados.data}T23:59:59-03:00`);
+        const hojeInicio = inicioDia(dados.data);
+        const hojeFim = fimDia(dados.data);
 
-        const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
-        const dataReferencia = new Date(`${dados.data}T12:00:00`);
-        const diaNome = diasSemana[dataReferencia.getDay()];
-        const configLimite = await LimiteAtendimento.findOne({ tipo: tipoParaBusca });
+        const diaNome = DIAS[diaSemana(dados.data)];
+        const configLimite = configOperacao;
 
-        let limitePrincipal = 0;
+        let limitePrincipal = Infinity;
         let limiteEspera = 0;
 
         if (configLimite) {
             if (configLimite.limites && configLimite.limites[diaNome] !== undefined) {
                 limitePrincipal = configLimite.limites[diaNome];
-            } else if (configLimite.limite_principal !== undefined) {
+            } else if (configLimite.limite_principal !== undefined && configLimite.limite_principal !== null) {
                 limitePrincipal = configLimite.limite_principal;
             }
 
-            limiteEspera = configLimite.limite_espera || 0;
+            limiteEspera = configLimite.limites_espera?.[diaNome] ?? configLimite.limite_espera ?? 0;
         } else {
             limitePrincipal = 8;
         }
-        const limiteTotal = limitePrincipal + limiteEspera;
+        const limiteTotal = limitePrincipal === 0 ? 0 : limitePrincipal + limiteEspera;
 
         const totalHoje = await Solicitacao.countDocuments({
             tipo: tipoParaBusca,
+            status: { $ne: 'Cancelado' },
             data_pedido: {
                 $gte: hojeInicio,
                 $lte: hojeFim
@@ -51,7 +57,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
             });
         }
 
-        const dataSolicitacao = new Date(`${dados.data}T00:00:00-03:00`);
+        const dataSolicitacao = inicioDia(dados.data);
         const ultimoAtendimento = await Atendimento.findOne({
             cpf_assistido: dados.cpf_assistido,
             tipo: tipoParaBusca
@@ -77,32 +83,28 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
                 totalApometriasHistoricas === 1 &&
                 totalPassesHistoricos === 1 &&
                 totalOutrosAtendimentos === 0
-                    ? 90
-                    : 27;
+                    ? configOperacao.intervalo_sem_retorno_dias
+                    : configOperacao.intervalo_dias;
 
-            const dataLiberacao = new Date(ultimoAtendimento.data);
-            dataLiberacao.setDate(dataLiberacao.getDate() + diasDeBloqueio);
+            const dataLiberacao = new Date(new Date(ultimoAtendimento.data).getTime() + diasDeBloqueio * 24 * 60 * 60 * 1000);
 
             if (dataSolicitacao < dataLiberacao) {
                 return res.json({
                     status: 'bloqueado_intervalo',
-                    mensagem: `Pelo intervalo desde o ultimo ciclo de atendimento, uma nova apometria está liberada apenas a partir de ${dataLiberacao.toLocaleDateString('pt-BR')}.`
+                    mensagem: `Pelo intervalo desde o ultimo ciclo de atendimento, uma nova apometria está liberada apenas a partir de ${formatarData(dataLiberacao)}.`
                 });
             }
         }
 
-        const nasc = new Date(dados.data_nascimento);
-        let idade = agoraUTC.getFullYear() - nasc.getFullYear();
-        if (brasiliaTime < new Date(brasiliaTime.getFullYear(), nasc.getMonth(), nasc.getDate())) {
-            idade--;
-        }
+        if (dados.data_nascimento && !dataValida(dados.data_nascimento)) return res.status(400).json({ status: 'erro', mensagem: 'Data de nascimento inválida.' });
+        const idade = dados.data_nascimento ? calcularIdade(dados.data_nascimento) : undefined;
 
         await Assistido.findByIdAndUpdate(
             dados.cpf_assistido,
             {
                 nome_assistido: dados.nome,
                 telefone_assistido: dados.telefone,
-                data_nascimento_assistido: dados.data_nascimento,
+                data_nascimento_assistido: dados.data_nascimento ? inicioDia(dados.data_nascimento) : null,
                 sexo_assistido: dados.sexo,
                 religiao_assistido: dados.religiao,
                 cidade_assistido: dados.cidade,
@@ -115,20 +117,6 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
 
         const idSolicitacao = `${dados.cpf_assistido}_${dados.data}`;
 
-        const contagem = await Solicitacao.countDocuments({
-            data_pedido: { $gte: hojeInicio },
-            tipo: tipoParaBusca
-        });
-
-        const posicaoFila = contagem + 1;
-
-        if (posicaoFila > limiteTotal) {
-            return res.json({
-                status: 'bloqueado',
-                mensagem: `O limite de ${limiteTotal} vagas para ${tipoParaBusca} hoje foi atingido.`
-            });
-        }
-
         const novaPosicao = totalHoje + 1;
 
         const novaSolicitacao = new Solicitacao({
@@ -138,7 +126,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
             sendo_atendido: dados.atendimento_por,
             queixa_motivo: dados.queixa,
             posicao: totalHoje + 1,
-            data_pedido: brasiliaTime,
+            data_pedido: dados.data === hojeLocal() ? agoraUTC : inicioDia(dados.data),
             tipo: tipoParaBusca,
             status: (totalHoje + 1) <= limitePrincipal ? 'Confirmado' : 'Espera'
         });
@@ -150,7 +138,7 @@ exports.criarSolicitacaoComCadastro = async (req, res) => {
                 status: 'sucesso',
                 mensagem: 'Solicitacao registrada!',
                 posicao: novaPosicao,
-                limite: limitePrincipal
+                limite: Number.isFinite(limitePrincipal) ? limitePrincipal : novaPosicao
             });
         } catch (erroSave) {
             if (erroSave.code === 11000) {
@@ -196,11 +184,8 @@ exports.buscarHistorico = async (req, res) => {
 
 exports.getFilaHoje = async (req, res) => {
     try {
-        const hojeInicio = new Date();
-        hojeInicio.setHours(0, 0, 0, 0);
-
-        const hojeFim = new Date();
-        hojeFim.setHours(23, 59, 59, 999);
+        const hojeInicio = inicioDia(hojeLocal());
+        const hojeFim = fimDia(hojeLocal());
 
         const solicitacoes = await Solicitacao.find({
             data_pedido: { $gte: hojeInicio, $lte: hojeFim }
@@ -244,4 +229,3 @@ exports.cancelarSolicitacao = async (req, res) => {
         res.status(500).send('Erro ao processar o cancelamento.');
     }
 };
-

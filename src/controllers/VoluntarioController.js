@@ -1,6 +1,7 @@
 const Voluntario = require('../models/Voluntario');
 const Atendimento = require('../models/Atendimento');
 const PresencaVoluntario = require('../models/PresencaVoluntario');
+const { hojeLocal, inicioDia, formatarData } = require('../utils/operacao');
 
 const modalidadesDisponibilidade = [
     { id: 'apometria', label: 'Apometria' },
@@ -9,6 +10,7 @@ const modalidadesDisponibilidade = [
     { id: 'maos', label: 'Maos Sem Fronteiras' },
     { id: 'homeopatia', label: 'Homeopatia' },
     { id: 'passe', label: 'Passe' },
+    { id: 'gappus', label: 'GAPPUS' },
     { id: 'cantina', label: 'Cantina' },
     { id: 'mesa', label: 'Mesa' }
 ];
@@ -35,14 +37,12 @@ function criarRegexCpfFlexivel(cpf = '') {
 }
 
 function obterHojeSaoPaulo() {
-    const dataIso = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    const dataIso = hojeLocal();
 
     return {
         dataIso,
-        dataInicio: new Date(`${dataIso}T00:00:00-03:00`),
-        dataExibicao: new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(
-            new Date(`${dataIso}T12:00:00-03:00`)
-        )
+        dataInicio: inicioDia(dataIso),
+        dataExibicao: formatarData(dataIso)
     };
 }
 
