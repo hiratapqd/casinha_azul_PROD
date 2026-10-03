@@ -1,0 +1,16 @@
+<%- include('inicio', { titulo: 'GAPPUS — Faltas nos últimos 30 dias' }) %>
+<div class="acoes"><a href="/atendimento/gappus">Voltar à lista de presença</a></div>
+<form method="GET" action="/relatorios/gappus-faltas" class="painel">
+<div class="campos"><div><label for="data_final">Data final do período</label><input type="date" id="data_final" name="data" value="<%= fim %>" max="<%= hoje %>" required></div>
+<div><label for="busca">Buscar por nome ou CPF</label><input id="busca" name="busca" maxlength="150" value="<%= busca %>"></div></div>
+<div class="acoes"><button type="submit" class="btn-atender">Consultar faltas</button><a href="/relatorios/gappus-faltas">Últimos 30 dias até hoje</a></div>
+</form>
+<p>Período: <strong><%= formatarData(inicio) %> a <%= formatarData(fim) %></strong>.</p>
+<p><strong><%= encontrosRealizados %></strong> encontro(s) com lista salva · <strong><%= faltantes.length %></strong> participante(s) com faltas<%= busca ? ' na busca' : '' %> · <strong><%= totalFaltas %></strong> falta(s).</p>
+<p class="nota">As faltas são calculadas nos encontros com lista salva, considerando a inclusão, a indicação no grupo ou a primeira presença registrada. Dias sem encontro registrado e datas anteriores à participação no grupo não contam. Quem desistiu não recebe faltas após a desistência.</p>
+<% if (!encontrosRealizados) { %><p class="aviso">Nenhum encontro com lista de presença salva neste período.</p><% } %>
+<div class="tabela"><table><thead><tr><th>Participante</th><th>CPF</th><th>Papel / Situação</th><th>Faltas</th><th>Presenças no período</th><th>Datas das faltas</th></tr></thead><tbody>
+<% faltantes.forEach(p => { %><tr><td><a href="/gappus/participantes/<%= encodeURIComponent(p.id) %>"><%= p.nome %></a></td><td><%= p.cpf || 'Sem CPF informado' %></td><td><%= p.papel %><br><small><%= p.status %></small></td><td><%= p.datasFaltas.length %> de <%= p.encontrosPrevistos %> encontro(s)</td><td><%= p.presencas %></td><td><% p.datasFaltas.forEach(data => { %><div><a href="/atendimento/gappus?data=<%= data %>"><%= formatarData(data) %></a></div><% }) %></td></tr><% }) %>
+<% if (!faltantes.length) { %><tr><td colspan="6"><%= busca ? 'Nenhum participante com faltas corresponde à busca.' : 'Nenhuma falta identificada nos encontros registrados neste período.' %></td></tr><% } %>
+</tbody></table></div>
+<%- include('fim') %>

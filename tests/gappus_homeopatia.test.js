@@ -173,6 +173,50 @@ test('painel e relatório de inativos consideram presença GAPPUS como retorno, 
     assert.deepEqual(inativos.dados.counts, { d30: 0, d60: 0, d90: 0 });
 });
 
+test('card e relatório contam quatro históricos completos, excluindo três com terapias anteriores', async t => {
+    const historico = [];
+    for (let i = 0; i < 7; i++) {
+        const cpfAssistido = String(12345678910 + i);
+        historico.push({ cpf_assistido: cpfAssistido, tipo: 'apometria', data: '2026-01-01T12:00:00Z' },
+            { cpf_assistido: cpfAssistido, tipo: 'passe', data: '2026-01-01T13:00:00Z' });
+        if (i >= 4) historico.push({ cpf_assistido: cpfAssistido, tipo: 'reiki', data: '2025-12-01T12:00:00Z' });
+    }
+    t.mock.method(Atendimento, 'find', () => consulta(historico));
+    t.mock.method(Atendimento, 'aggregate', async () => []);
+    t.mock.method(Atendimento, 'countDocuments', async () => 0);
+    t.mock.method(Voluntario, 'find', () => consulta([]));
+    t.mock.method(Escala, 'find', () => consulta([]));
+    t.mock.method(Encontro, 'find', () => consulta([]));
+    t.mock.method(Encontro, 'findById', () => consulta(null));
+    const painel = resposta(); await dashboard.getDashboard({}, painel);
+    assert.equal(painel.dados.resumo.apometriaUnica, 4);
+    assert.equal(painel.dados.resumo.totalBaseApometria, 7);
+    assert.equal(painel.dados.resumo.taxaAbandono, '57.14');
+    // O agregado pode separar CPFs com e sem máscara; a regra reúne o histórico.
+    t.mock.method(Atendimento, 'aggregate', async () => historico.map(a => ({ _id: a.cpf_assistido, atendimentos: [a] })));
+    t.mock.method(Assistido, 'find', () => consulta([]));
+    const relatorio = resposta(); await relatorios.getApometriaInativos({}, relatorio);
+    assert.equal(Object.values(relatorio.dados.counts).reduce((a, b) => a + b, 0), 4);
+});
+
+test('abandono exige uma sessão de cada, considera máscaras de CPF e exclui qualquer outra participação', () => {
+    const { resumirAbandonoApometria } = require('../src/services/AcompanhamentosHistoricos');
+    const par = [{ cpf_assistido: cpf, tipo: ' Apometria ', data: '2026-01-01T12:00:00Z' },
+        { cpf_assistido: '123.456.789-06', tipo: 'PASSE', data: '2026-01-01T13:00:00Z' }];
+    assert.equal(resumirAbandonoApometria(par).candidatos.length, 1);
+    for (const extra of [
+        { ...par[0], data: '2025-12-01T12:00:00Z' },
+        { ...par[1], data: '2026-01-02T12:00:00Z' },
+        { ...par[0], tipo: 'auriculo', data: '2025-12-01T12:00:00Z' },
+        { ...par[0], tipo: 'reiki', data: '2026-01-02T12:00:00Z' },
+        { ...par[0], tipo: 'homeopatia', data: 'inválida' }
+    ]) assert.equal(resumirAbandonoApometria([...par, extra]).candidatos.length, 0);
+    assert.equal(resumirAbandonoApometria(par, [{ _id: '2025-12-01', participantes: [{ cpf }] }]).candidatos.length, 0);
+    assert.equal(resumirAbandonoApometria([par[0], { ...par[1], data: 'inválida' }]).candidatos.length, 0);
+    assert.equal(resumirAbandonoApometria([par[0], { ...par[1], data: '2025-12-01' }]).candidatos.length, 0);
+    assert.deepEqual(resumirAbandonoApometria([]), { totalBase: 0, candidatos: [] });
+});
+
 test('GAPPUS inativo impede encontro novo e permite correção de uma lista existente', async t => {
     configurarGrupo(t);
     mongoose.connection.db.collection = () => ({ find: () => ({ toArray: async () => [{ terapia: 'gappus', ativa: false }] }) });

@@ -2,16 +2,8 @@ const Atendimento = require('../models/Atendimento');
 const Voluntario = require('../models/Voluntario');
 const EscalaData = require('../models/EscalaData');
 const EncontroGappus = require('../models/EncontroGappus');
-const { datasPresencasGappus } = require('../services/AcompanhamentosHistoricos');
-const { hojeLocal, inicioDia, fimDia, diaSemana, DIAS_ABREV, MODALIDADES, dataISO } = require('../utils/operacao');
-
-function normalizarCpf(cpf = '') {
-    return String(cpf).replace(/\D/g, '');
-}
-
-function normalizarTipo(tipo = '') {
-    return String(tipo).trim().toLowerCase();
-}
+const { resumirAbandonoApometria } = require('../services/AcompanhamentosHistoricos');
+const { hojeLocal, inicioDia, fimDia, diaSemana, DIAS_ABREV, MODALIDADES } = require('../utils/operacao');
 
 function formatarPercentualTruncado(valor, total) {
     if (!total) return '0.00';
@@ -56,65 +48,19 @@ const calcularEscalaHoje = (voluntarios, mapa) => {
 };
 
 const calcularAbandonoApometria = async () => {
-    const presencasGappus = datasPresencasGappus(await EncontroGappus.find().lean());
+    const encontrosGappus = await EncontroGappus.find().lean();
     const historico = await Atendimento.find(
         { cpf_assistido: { $exists: true, $nin: [null, ''] } },
         { cpf_assistido: 1, tipo: 1, data: 1 }
     ).lean();
 
-    const historicosPorCpf = new Map();
-
-    historico.forEach((atendimento) => {
-        const cpf = normalizarCpf(atendimento.cpf_assistido);
-        const tipo = normalizarTipo(atendimento.tipo);
-        const data = new Date(atendimento.data);
-
-        if (!cpf || !tipo || Number.isNaN(data.getTime())) return;
-
-        if (!historicosPorCpf.has(cpf)) {
-            historicosPorCpf.set(cpf, []);
-        }
-
-        historicosPorCpf.get(cpf).push({ tipo, data });
-    });
-
-    let totalComApometria = 0;
-    let totalAbandonos = 0;
-
-    historicosPorCpf.forEach((atendimentos, cpf) => {
-        atendimentos.sort((a, b) => a.data - b.data);
-
-        const indiceUltimaApometria = atendimentos
-            .map((atendimento) => atendimento.tipo)
-            .lastIndexOf('apometria');
-
-        if (indiceUltimaApometria === -1) return;
-
-        totalComApometria++;
-
-        const dataUltimaApometria = atendimentos[indiceUltimaApometria].data.getTime();
-        const atendimentosDesdeUltimaApometria = atendimentos.filter((atendimento) => {
-            return atendimento.data.getTime() >= dataUltimaApometria;
-        });
-
-        const temPasseNoCiclo = atendimentosDesdeUltimaApometria.some((atendimento) => {
-            return atendimento.tipo === 'passe';
-        });
-
-        const teveOutroAtendimentoDepois = atendimentosDesdeUltimaApometria.some((atendimento) => {
-            return atendimento.tipo !== 'apometria' && atendimento.tipo !== 'passe';
-        });
-
-        const retornouGappus = presencasGappus.get(cpf) >= dataISO(atendimentos[indiceUltimaApometria].data);
-        if (temPasseNoCiclo && !teveOutroAtendimentoDepois && !retornouGappus) {
-            totalAbandonos++;
-        }
-    });
+    const { totalBase, candidatos } = resumirAbandonoApometria(historico, encontrosGappus);
+    const totalAbandonos = candidatos.length;
 
     return {
-        totalBase: totalComApometria,
+        totalBase,
         totalAbandonos,
-        taxaAbandono: formatarPercentualTruncado(totalAbandonos, totalComApometria)
+        taxaAbandono: formatarPercentualTruncado(totalAbandonos, totalBase)
     };
 };
 
