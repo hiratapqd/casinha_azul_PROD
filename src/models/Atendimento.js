@@ -13,9 +13,13 @@ const AtendimentoSchema = new mongoose.Schema({
     para_terceiro: Boolean,
     beneficiario: { type: require('./PessoaBeneficiada'), default: undefined },
     data_retorno: String,
+    plano_atendimento: { type: new mongoose.Schema({
+        modelo: { type: String, required: true }, nome: { type: String, required: true },
+        metas: [{ _id: false, terapia: { type: String, enum: ['apometria', 'passe', 'reiki', 'auriculo'], required: true },
+            sessoes_previstas: { type: Number, min: 1, max: 100, required: true } }]
+    }, { _id: false }), default: undefined },
     passe_pos_apometria: { type: Boolean },
-    apometria_origem: { type: mongoose.Schema.Types.ObjectId, ref: 'Atendimento' },
-    plano_acompanhamento: { type: String, enum: ['plano_1', 'plano_2', 'plano_3', 'plano_4'] }
+    apometria_origem: { type: mongoose.Schema.Types.ObjectId, ref: 'Atendimento' }
 }, { 
     collection: 'atendimentos'
 });

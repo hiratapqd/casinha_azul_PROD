@@ -11,20 +11,16 @@ const livrariaController = require('../controllers/LivrariaController');
 const RecepcaoController = require('../controllers/RecepcaoController');
 const gestaoController = require('../controllers/GestaoController');
 const gappusController = require('../controllers/GappusController');
-const { listarPlanosApometria } = require('../services/PlanosApometria');
 const Voluntario = require('../models/Voluntario');
 const { MODALIDADES } = require('../utils/operacao');
+const { listarPlanosAtendimento } = require('../services/PlanosAtendimento');
 
 router.get('/assistidos', gestaoController.listarAssistidos);
 router.get('/assistidos/:cpf', gestaoController.fichaAssistido);
 router.post('/assistidos/:cpf', gestaoController.salvarAssistido);
-router.get('/acompanhamentos', gestaoController.acompanhamentos);
-router.get('/acompanhamentos/novo', gestaoController.formPlano);
-router.get('/acompanhamentos/:id/editar', gestaoController.formPlano);
-router.post('/acompanhamentos', gestaoController.salvarPlano);
-router.post('/acompanhamentos/:id', gestaoController.salvarPlano);
 router.get('/configuracoes', gestaoController.configuracoes);
-router.post('/configuracoes/planos/:modelo', gestaoController.salvarModeloPlano);
+router.post('/configuracoes/planos-atendimento', gestaoController.criarPlanoAtendimento);
+router.post('/configuracoes/planos-atendimento/:id', gestaoController.salvarPlanoAtendimento);
 router.post('/configuracoes/:terapia', gestaoController.salvarConfiguracao);
 router.get('/voluntarios/escala-data', gestaoController.escala);
 router.post('/voluntarios/escala-data', gestaoController.salvarEscala);
@@ -116,7 +112,7 @@ function renderFormularioAtendimento(chave) {
                 [`disponibilidade.${modalidade.disponibilidade}.0`]: { $exists: true }
             }).sort({ nome: 1 }).lean();
             res.render(apometria ? 'atendimento/apometrico' : 'atendimento/formulario_padrao', {
-                ...dados, voluntarios, ...(apometria ? { planosApometria: await listarPlanosApometria() } : {})
+                ...dados, voluntarios, ...(apometria ? { planosAtendimento: await listarPlanosAtendimento() } : {})
             });
         } catch (erro) { next(erro); }
     };

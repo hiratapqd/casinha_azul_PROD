@@ -9,7 +9,7 @@
         <input type="hidden" name="idSolicitacao" id="idSolicitacao">
         
         <div class="form-row">
-            <div class="form-group">
+            <div class="form-group campo-recuo">
                 <label>Data:</label>
                 <input type="date" name="data" id="campo_data" required>
             </div>
@@ -20,7 +20,7 @@
         </div>
 
         <div class="form-row">
-            <div class="form-group">
+            <div class="form-group campo-recuo">
                 <label>Nome do atendido:</label>
                 <input type="text" name="nome_assistido" id="campo_nome" required>
             </div>
@@ -34,41 +34,45 @@
             </div>
         </div>
 
-        <div class="form-row">
-            <div class="form-group">
+        <div class="terapeuta-beneficiario-linha">
+            <div class="form-group terapeuta-selecao">
                 <%- include('terapeuta') %>
             </div>
+            <label class="opcao-beneficiario"><input type="checkbox" name="para_terceiro" id="para_terceiro"> Atendimento em intenção de outra pessoa</label>
         </div>
 
         <div class="form-group apometria-beneficiario">
-            <label><input type="checkbox" name="para_terceiro" id="para_terceiro"> Atendimento em intenção de outra pessoa</label>
             <div id="dados_beneficiario" hidden>
+                <br>
                 <p>O atendido é quem compareceu à apometria e fará os passes. Informe abaixo o assistido beneficiado. Quando marcar GAPPUS, os dois serão incluídos na lista do grupo.</p>
+                <br>
                 <div class="form-row"><div class="form-group"><label for="beneficiario_nome">Nome do assistido beneficiado:</label><input id="beneficiario_nome" name="beneficiario_nome" maxlength="150"></div>
                 <div class="form-group"><label for="beneficiario_cpf">CPF do assistido (opcional):</label><input id="beneficiario_cpf" name="beneficiario_cpf" inputmode="numeric" maxlength="14"></div>
                 <div class="form-group"><label for="beneficiario_parentesco">Relação com o atendido:</label><input id="beneficiario_parentesco" name="beneficiario_parentesco" maxlength="80" placeholder="Ex.: filho, amigo"></div></div>
                 <input type="hidden" name="beneficiario_id" id="beneficiario_id">
                 <button type="button" id="buscar_beneficiario" class="btn-atender">Buscar pessoa já cadastrada</button>
-                <label for="beneficiario_cadastrado">Pessoas encontradas:</label><select id="beneficiario_cadastrado"><option value="">Novo assistido / não selecionado</option></select>
+                <div id="resultados_beneficiario" class="resultados-beneficiario"></div>
                 <p id="feedback_beneficiario" role="status"></p>
             </div>
         </div>
 
-        <div class="form-row plano-acompanhamento-row">
-        <label for="plano_acompanhamento">Plano de acompanhamento:</label>
-        <div class="form-group">
-            <select id="plano_acompanhamento" name="plano_acompanhamento" required>
-                <% planosApometria.forEach(plano => { %>
-                    <option value="<%= plano.id %>" <%= plano.id === 'plano_1' ? 'selected' : '' %>><%= plano.nome %> — <%= plano.descricao %></option>
+        <div class="plano-atendimento-linha">
+            <label for="plano_atendimento">Plano de atendimento:</label>
+            <select id="plano_atendimento" name="plano_atendimento" required>
+                <% (typeof planosAtendimento === 'undefined' ? [] : planosAtendimento).forEach(p => { %>
+                <option value="<%= p.id %>" <%= p.id === 'passes' ? 'selected' : '' %>><%= p.nome %><%= p.fixo ? '' : ' — ' + p.descricao %></option>
                 <% }) %>
             </select>
+            <div class="acompanhamentos-adicionais" role="group" aria-label="Acompanhamentos adicionais">
+                <label><input type="checkbox" name="homeopatia_indicada"> Homeopatia</label>
+                <label><input type="checkbox" name="gappus_indicado"> GAPPUS</label>
+            </div>
         </div>
-        <div class="acompanhamentos-adicionais" role="group" aria-label="Acompanhamentos adicionais">
-            <label><input type="checkbox" name="homeopatia_indicada"> Homeopatia</label>
-            <label><input type="checkbox" name="gappus_indicado"> GAPPUS</label>
+        <div class="form-group">
+            <label for="data_retorno">Data esperada de retorno (opcional):</label>
+            <input type="date" name="data_retorno" id="data_retorno">
         </div>
-        </div>
-        <p>Ao finalizar a apometria, o plano será registrado na ficha do assistido. As sessões serão acompanhadas por modalidade. O passe de encaminhamento após a apometria não conta nas sessões do tratamento.</p>
+        <p></p>
         <br>
         <div class="form-group">
             <label>Evolução do Atendimento:</label>
@@ -98,6 +102,7 @@
 <script src="/apometriaBeneficiario.js"></script>
 <script>
     const dataHoje = CasinhaDatas.hojeLocal();
+    document.getElementById('data_retorno').min = CasinhaDatas.somarDiasISO(dataHoje, 1);
     document.getElementById('campo_data').value = dataHoje;
     const campoCpf = document.getElementById('cpf_assistido');
     let ultimoCpfSemCadastroAlertado = '';
@@ -124,6 +129,12 @@
         return CasinhaDatas.calcularIdade(dataNasc);
     }
 
+    function escaparHtml(valor) {
+        const elemento = document.createElement('span');
+        elemento.textContent = valor || '';
+        return elemento.innerHTML;
+    }
+
     function renderizarTabela(lista) {
         const corpo = document.getElementById('tabela-corpo');
         if (!lista || lista.length === 0) {
@@ -134,7 +145,7 @@
             <tr>
                 <td>${CasinhaDatas.formatarData(item.data)}</td>
                 <td>${item.voluntario || '-'}</td>
-                <td>${item.observacoes || '-'}</td>
+                <td>${item.observacoes || '-'}${item.plano_atendimento ? '<p>Plano de atendimento: ' + escaparHtml(item.plano_atendimento.nome) + '</p>' : ''}${item.data_retorno ? '<p>Data esperada de retorno: ' + CasinhaDatas.formatarData(item.data_retorno) + '</p>' : ''}</td>
             </tr>
         `).join('');
     }
@@ -194,7 +205,7 @@
 
     document.getElementById('atendimentoForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = e.target.querySelector('button');
+        const btn = e.target.querySelector('button[type="submit"]');
 
         if (!cpfTem11Digitos(campoCpf.value)) {
             await Swal.fire('CPF invalido', 'Informe um CPF com 11 digitos antes de finalizar.', 'warning');
@@ -223,7 +234,7 @@
 
             if (resp.ok) {
                 const resultado = await resp.json();
-                const mensagem = `Apometria salva e ${resultado.planoAcompanhamento} registrado.${resultado.encaminhadoPasse ? ' Assistido encaminhado para o Passe!' : ''}`;
+                const mensagem = `Apometria salva.${resultado.encaminhadoPasse ? ' Assistido encaminhado para o Passe!' : ''}`;
                 await Swal.fire('Sucesso', mensagem, 'success');
                 window.location.href = '/fila-atendimento';
             } else {

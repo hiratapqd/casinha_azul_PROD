@@ -2,11 +2,11 @@ const Atendimento = require('../models/Atendimento');
 const Solicitacao = require('../models/Solicitacao');
 const Assistido = require('../models/Assistido');
 const mongoose = require('mongoose');
-const { obterPlanoApometria, registrarPlanoApometria } = require('../services/PlanosApometria');
 const { salvarSemTransacao, transacoesIndisponiveis } = require('../services/ApometriaSemTransacao');
 const { listarConfiguracoes } = require('../services/ConfiguracaoOperacao');
 const { hojeLocal, inicioDia, dataValida, texto } = require('../utils/operacao');
 const { resolverPessoa } = require('../services/ParticipantesGappus');
+const { obterPlanoAtendimento } = require('../services/PlanosAtendimento');
 
 function normalizarCpf(cpf = '') {
     return String(cpf).replace(/\D/g, '');
@@ -43,7 +43,7 @@ exports.salvarAtendimento = async (req, res) => {
     try {
         const dados = req.body;
         const paraTerceiro = dados.tipo === 'apometria' && dados.para_terceiro === 'on';
-        const modeloPlano = dados.tipo === 'apometria' ? await obterPlanoApometria(dados.plano_acompanhamento || (paraTerceiro ? 'plano_4' : undefined)) : null;
+        const apometria = dados.tipo === 'apometria';
         const cpfAssistido = normalizarCpf(dados.cpf_assistido);
         const hoje = hojeLocal();
         const configs = await listarConfiguracoes();
@@ -52,7 +52,6 @@ exports.salvarAtendimento = async (req, res) => {
         if (configOperacao.grupo) return res.status(400).json({ status: 'erro', mensagem: 'Registre o GAPPUS na lista de presença por encontro.' });
         const adicionais = {};
         if (paraTerceiro) {
-            if (modeloPlano.metas.some(m => m.terapia !== 'passe')) return res.status(400).json({ status: 'erro', mensagem: 'Na apometria em intenção de outra pessoa, selecione o Plano 4, somente passes.' });
             let nome = texto(dados.beneficiario_nome, 150);
             let cpf = texto(dados.beneficiario_cpf, 20).replace(/\D/g, '');
             if (!nome || (cpf && cpf.length !== 11) || (cpf && cpf === cpfAssistido)) return res.status(400).json({ status: 'erro', mensagem: 'Informe o nome do assistido beneficiado e, se disponível, seu CPF com 11 dígitos, diferente do atendido.' });
@@ -67,7 +66,9 @@ exports.salvarAtendimento = async (req, res) => {
             adicionais.beneficiario = { participante_id: pessoa?.id || cpf || new mongoose.Types.ObjectId().toString(), nome,
                 ...(cpf ? { cpf } : {}), parentesco: texto(dados.beneficiario_parentesco, 80) };
         }
-        if (modeloPlano) {
+        if (apometria) {
+            const plano = await obterPlanoAtendimento(texto(dados.plano_atendimento, 100) || undefined);
+            adicionais.plano_atendimento = { modelo: plano.id, nome: plano.nome, metas: plano.metas.map(m => ({ ...m })) };
             for (const [modalidade, campo] of [['homeopatia', 'homeopatia_indicada'], ['gappus', 'gappus_indicado']]) {
                 adicionais[campo] = dados[campo] === 'on';
                 if (adicionais[campo] && !configs.find(c => c.id === modalidade)?.ativa) {
@@ -75,10 +76,10 @@ exports.salvarAtendimento = async (req, res) => {
                 }
             }
         }
-        if (dados.tipo === 'homeopatia') {
+        if (dados.tipo === 'homeopatia' || apometria) {
             const retorno = texto(dados.data_retorno, 10);
-            if (!dataValida(retorno) || retorno <= hoje) return res.status(400).json({ status: 'erro', mensagem: 'Informe uma data de retorno de homeopatia posterior a hoje.' });
-            adicionais.data_retorno = retorno;
+            if ((dados.tipo === 'homeopatia' || retorno) && (!dataValida(retorno) || retorno <= hoje)) return res.status(400).json({ status: 'erro', mensagem: 'Informe uma data esperada de retorno posterior a hoje.' });
+            if (retorno) adicionais.data_retorno = retorno;
         }
         const solicitacao = await Solicitacao.findOne({
             tipo: dados.tipo,
@@ -104,8 +105,7 @@ exports.salvarAtendimento = async (req, res) => {
             voluntario: dados.voluntario,
             observacoes: dados.observacoes,
             tipo: dados.tipo,
-            ...adicionais,
-            ...(modeloPlano ? { plano_acompanhamento: modeloPlano.id } : {})
+            ...adicionais
         };
         if (dados.tipo === 'passe') {
             const apometria = await Atendimento.findOne({ cpf_assistido: cpfAssistido, tipo: 'apometria',
@@ -119,14 +119,13 @@ exports.salvarAtendimento = async (req, res) => {
         let encaminhadoPasse = false;
         async function persistir(session) {
             const opcoes = session ? { session } : {};
-            if (modeloPlano && solicitacao) {
+            if (apometria && solicitacao) {
                 const atualizada = await Solicitacao.findOneAndUpdate({ _id: solicitacao._id, status: { $in: ['Confirmado', 'Aguardando', 'Espera', 'Em Atendimento'] } }, { $set: { status: 'Atendido' } }, { ...opcoes, returnDocument: 'before' });
                 if (!atualizada) { const e = new Error('Essa solicitação já foi finalizada. Atualize a fila.'); e.status = 409; throw e; }
             }
             const novoAtendimento = new Atendimento(dadosAtendimento);
             await novoAtendimento.save(opcoes);
-            if (modeloPlano) await registrarPlanoApometria(novoAtendimento, modeloPlano, session);
-            if (solicitacao && !modeloPlano) {
+            if (solicitacao && !apometria) {
                 await Solicitacao.findByIdAndUpdate(solicitacao._id, { status: 'Atendido' }, opcoes);
             }
             if (configOperacao.geraPasseAoFinalizar && configs.find(c => c.id === 'passe')?.ativa) {
@@ -134,25 +133,25 @@ exports.salvarAtendimento = async (req, res) => {
                 await Solicitacao.findOneAndUpdate({ _id: idPasse }, { $setOnInsert: {
                     nome_assistido: dadosAtendimento.nome_assistido, tipo: 'passe', status: 'Confirmado',
                     data_pedido: new Date(), sendo_atendido: `Vindo do(a) ${dados.tipo}`,
-                    ...(modeloPlano ? { passe_pos_apometria: true, apometria_origem: novoAtendimento._id } : {})
+                    ...(apometria ? { passe_pos_apometria: true, apometria_origem: novoAtendimento._id } : {})
                 } }, { ...opcoes, upsert: true });
                 encaminhadoPasse = true;
             }
         }
         // Usa transação quando disponível. Em MongoDB standalone, reserva a
         // solicitação e recupera as gravações desta tentativa em caso de falha.
-        if (modeloPlano) {
+        if (apometria) {
             try { await mongoose.connection.transaction(persistir); }
             catch (erro) {
                 if (!transacoesIndisponiveis(erro)) throw erro;
                 const encaminharPasse = configOperacao.geraPasseAoFinalizar && configs.find(c => c.id === 'passe')?.ativa;
-                await salvarSemTransacao({ dadosAtendimento, modelo: modeloPlano, solicitacao, encaminharPasse, hoje });
+                await salvarSemTransacao({ dadosAtendimento, solicitacao, encaminharPasse, hoje });
                 encaminhadoPasse = Boolean(encaminharPasse);
             }
         }
         else await persistir();
 
-        res.status(200).json({ status: 'sucesso', encaminhadoPasse, ...(modeloPlano ? { planoAcompanhamento: modeloPlano.nome } : {}) });
+        res.status(200).json({ status: 'sucesso', encaminhadoPasse });
     } catch (err) {
         console.error('Erro ao salvar atendimento:', err);
         res.status(err.status || (err.name === 'ValidationError' ? 400 : 500)).json({ status: 'erro', mensagem: err.message });

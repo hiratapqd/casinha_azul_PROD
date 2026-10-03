@@ -121,25 +121,85 @@ nav { height: auto; min-height: 120px; }
     justify-content: flex-start;
 }
 
-.plano-acompanhamento-row {
-    flex-wrap: nowrap;
+.ficha-apometria .campo-recuo {
+    padding-left: 20px;
+    box-sizing: border-box;
+}
+
+.ficha-apometria .terapeuta-beneficiario-linha {
+    display: flex;
     align-items: center;
+    flex-wrap: nowrap;
+    gap: 20px;
+    padding-left: 20px;
+    margin-bottom: 15px;
+    text-align: left;
+    overflow-x: auto;
+}
+.terapeuta-beneficiario-linha .terapeuta-selecao {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex: 0 1 600px;
+    min-width: 280px;
+    margin-bottom: 0;
+}
+.terapeuta-selecao > label {
+    white-space: nowrap;
+    margin: 0;
+}
+.terapeuta-selecao > select {
+    flex: 1;
+    min-width: 180px;
+    margin: 0;
+}
+.terapeuta-selecao > p { flex-basis: 100%; }
+.terapeuta-beneficiario-linha .opcao-beneficiario {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+    white-space: nowrap;
+    margin: 0;
 }
 
-.plano-acompanhamento-row > label { flex: 0 0 auto; white-space: nowrap; margin: 0; }
-.plano-acompanhamento-row .acompanhamentos-adicionais { flex: 0 0 auto; }
-
-.plano-acompanhamento-row .form-group {
-    flex: 0 1 33%;
-    min-width: 0;
+.ficha-apometria #feedback_beneficiario:not(:empty) {
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
-.plano-acompanhamento-row select { width: 100%; }
+.resultados-beneficiario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 .acompanhamentos-adicionais { display: flex; flex-wrap: wrap; gap: 16px; padding: 6px 0; }
 .acompanhamentos-adicionais label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 
-@media (max-width: 600px) {
-    .plano-acompanhamento-row { flex-wrap: wrap; align-items: stretch; }
-    .plano-acompanhamento-row .form-group { flex: none; width: 100%; }
+.ficha-apometria .plano-atendimento-linha {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 16px;
+    padding-left: 20px;
+    margin-bottom: 15px;
+    text-align: left;
+    overflow-x: auto;
+}
+.plano-atendimento-linha > label {
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin: 0;
+}
+.plano-atendimento-linha > select {
+    flex: 0 1 400px;
+    min-width: 180px;
+    margin: 0;
+}
+.plano-atendimento-linha .acompanhamentos-adicionais {
+    flex-shrink: 0;
+    flex-wrap: nowrap;
 }
 
 
