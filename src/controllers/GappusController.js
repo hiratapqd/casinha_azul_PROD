@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const { identidade, idValido, desistiuNaData, carregarPessoas, resolverPessoa, montarLista } = require('../services/ParticipantesGappus');
 const { listarConfiguracoes } = require('../services/ConfiguracaoOperacao');
 const op = require('../utils/operacao');
+const { resumirFaltasGappus } = require('../services/FaltasGappus');
 
 function erro(mensagem, status = 400) { throw Object.assign(new Error(mensagem), { status }); }
 function dataEncontro(valor) {
@@ -40,6 +41,24 @@ exports.formulario = acao(async (req, res) => {
     }
     res.render('gestao/gappus', { data, encontro, encontros, voluntarios, participantes, desistentes,
         ativa: configs.find(c => c.id === 'gappus')?.ativa, salvo: req.query.salvo === '1', formatarData: op.formatarData });
+});
+
+exports.relatorioFaltas = acao(async (req, res) => {
+    const hoje = op.hojeLocal();
+    const fim = dataEncontro(req.query.data);
+    if (fim > hoje) erro('A data final do relatório deve ser hoje ou uma data anterior.');
+    const inicio = op.somarDiasISO(fim, -29);
+    const busca = op.texto(req.query.busca, 150);
+    const [encontros, cadastro] = await Promise.all([
+        Encontro.find({ _id: { $lte: fim } }).sort({ _id: 1 }).lean(), carregarPessoas()
+    ]);
+    const resumo = resumirFaltasGappus(encontros, cadastro, inicio, fim);
+    const nomeBusca = busca.toLocaleLowerCase('pt-BR');
+    const cpfBusca = busca.replace(/\D/g, '');
+    const faltantes = resumo.faltantes.filter(p => !busca || p.nome.toLocaleLowerCase('pt-BR').includes(nomeBusca) || (cpfBusca && p.cpf?.includes(cpfBusca)));
+    res.render('gestao/gappus_faltas', { inicio, fim, hoje, busca, faltantes,
+        encontrosRealizados: resumo.encontrosRealizados,
+        totalFaltas: faltantes.reduce((total, p) => total + p.datasFaltas.length, 0), formatarData: op.formatarData });
 });
 
 exports.salvar = acao(async (req, res) => {

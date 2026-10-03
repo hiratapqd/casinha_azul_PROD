@@ -10,7 +10,7 @@
     "db:import-csv": "node populate_db/import_atendimentos_csv.js",
     "db:import-vendas": "node populate_db/import_vendas_csv.js --confirm-delete",
     "db:import-vendas:dry-run": "node populate_db/import_vendas_csv.js --dry-run",
-    "test": "node --test tests/gestao.test.js tests/horarios.test.js tests/apometria.test.js tests/planos_atendimento.test.js tests/gappus_homeopatia.test.js tests/gappus_participantes.test.js"
+    "test": "node --test tests/gestao.test.js tests/horarios.test.js tests/apometria.test.js tests/planos_atendimento.test.js tests/gappus_homeopatia.test.js tests/gappus_participantes.test.js tests/gappus_faltas.test.js"
   },
   "keywords": [],
   "author": "",

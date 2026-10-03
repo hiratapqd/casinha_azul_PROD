@@ -150,6 +150,7 @@ router.post('/atendimento/salvar', atendimentoController.salvarAtendimento);
 // --- ROTAS DE ATENDIMENTO (VIEWS) ---
 router.get('/atendimento/apometrico', renderFormularioAtendimento('apometria'));
 router.get('/atendimento/gappus', gappusController.formulario);
+router.get('/relatorios/gappus-faltas', gappusController.relatorioFaltas);
 router.post('/atendimento/gappus', gappusController.salvar);
 router.get('/api/gappus/participantes', gappusController.buscarParticipantes);
 router.post('/api/gappus/participantes', gappusController.adicionarParticipante);

@@ -276,6 +276,8 @@ test('rotas novas respondem por HTTP com as telas corretas, sem conexão de prod
             esta_ativo: 'Sim', [`disponibilidade.${modalidade.disponibilidade}.0`]: { $exists: true }
         });
     }
+    const faltas = await fetch(origem + '/relatorios/gappus-faltas');
+    assert.equal(faltas.status, 200); assert.ok((await faltas.text()).includes('Faltas nos últimos 30 dias'));
     const grupo = await fetch(origem + '/atendimento/gappus');
     assert.equal(grupo.status, 200); assert.ok((await grupo.text()).includes('GAPPUS — Lista de presença'));
     const invalida = await fetch(origem + '/voluntarios/escala-data?data=2026-02-30'); assert.equal(invalida.status, 400);

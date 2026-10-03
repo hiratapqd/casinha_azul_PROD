@@ -3,12 +3,8 @@ const Assistido = require('../models/Assistido');
 const Voluntario = require('../models/Voluntario');
 const PresencaVoluntario = require('../models/PresencaVoluntario');
 const EncontroGappus = require('../models/EncontroGappus');
-const { datasPresencasGappus } = require('../services/AcompanhamentosHistoricos');
-const { hojeLocal, inicioDia, fimDia, somarDiasISO, formatarData, dataISO } = require('../utils/operacao');
-
-function normalizarTipo(tipo = '') {
-    return String(tipo).trim().toLowerCase();
-}
+const { resumirAbandonoApometria } = require('../services/AcompanhamentosHistoricos');
+const { hojeLocal, inicioDia, fimDia, somarDiasISO, formatarData } = require('../utils/operacao');
 
 function normalizarCpf(cpf = '') {
     const cpfNumerico = String(cpf).replace(/\D/g, '');
@@ -280,7 +276,7 @@ exports.getVoluntariosInativos = async (req, res) => {
 
 exports.getApometriaInativos = async (req, res) => {
     try {
-        const presencasGappus = datasPresencasGappus(await EncontroGappus.find().lean());
+        const encontrosGappus = await EncontroGappus.find().lean();
         const hoje = hojeLocal();
         const data30 = fimDia(somarDiasISO(hoje, -30));
         const data60 = fimDia(somarDiasISO(hoje, -60));
@@ -307,48 +303,8 @@ exports.getApometriaInativos = async (req, res) => {
             }
         ]);
 
-        const candidatos = historicosPorAssistido.reduce((acc, registro) => {
-            const atendimentos = (registro.atendimentos || [])
-                .map((atendimento) => ({
-                    ...atendimento,
-                    data: new Date(atendimento.data),
-                    tipo: normalizarTipo(atendimento.tipo)
-                }))
-                .filter((atendimento) => atendimento.tipo && !Number.isNaN(atendimento.data.getTime()));
-
-            const indiceUltimaApometria = atendimentos
-                .map((atendimento) => atendimento.tipo)
-                .lastIndexOf('apometria');
-
-            if (indiceUltimaApometria === -1) {
-                return acc;
-            }
-
-            const ultimaApometria = atendimentos[indiceUltimaApometria];
-            const dataUltimaApometria = ultimaApometria.data.getTime();
-            const atendimentosDesdeUltimaApometria = atendimentos.filter((atendimento) => {
-                return atendimento.data.getTime() >= dataUltimaApometria;
-            });
-
-            const temPasseNoCiclo = atendimentosDesdeUltimaApometria.some((atendimento) => atendimento.tipo === 'passe');
-            const teveOutroAtendimentoDepois = atendimentosDesdeUltimaApometria.some((atendimento) => {
-                return atendimento.tipo !== 'apometria' && atendimento.tipo !== 'passe';
-            });
-
-            const retornouGappus = presencasGappus.get(normalizarCpf(registro._id)) >= dataISO(ultimaApometria.data);
-            if (!temPasseNoCiclo || teveOutroAtendimentoDepois || retornouGappus) {
-                return acc;
-            }
-
-            const ultimoAtendimento = atendimentos[atendimentos.length - 1];
-            acc.push({
-                cpf: registro._id,
-                nome: ultimoAtendimento.nome || ultimaApometria.nome || '',
-                ultimaData: ultimoAtendimento.data
-            });
-
-            return acc;
-        }, []);
+        const historico = historicosPorAssistido.flatMap(registro => (registro.atendimentos || []).map(a => ({ ...a, cpf_assistido: registro._id })));
+        const { candidatos } = resumirAbandonoApometria(historico, encontrosGappus);
 
         const dadosCadastrais = await Assistido.find({
             _id: { $in: candidatos.map((item) => item.cpf) }

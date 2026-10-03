@@ -44,4 +44,32 @@ function identificarInterrompidos(registros, encontrosGappus = []) {
     }
     return interrompidos.sort((a, b) => a.ultimaData - b.ultimaData);
 }
-module.exports = { identificarInterrompidos, datasPresencasGappus };
+function resumirAbandonoApometria(historico, encontrosGappus = []) {
+    const presencas = datasPresencasGappus(encontrosGappus);
+    const porCpf = new Map();
+    for (const atendimento of historico) {
+        const cpf = String(atendimento.cpf_assistido || '').replace(/\D/g, '');
+        const tipo = String(atendimento.tipo || '').trim().toLowerCase();
+        if (cpf.length !== 11 || !tipo) continue;
+        if (!porCpf.has(cpf)) porCpf.set(cpf, []);
+        porCpf.get(cpf).push({ ...atendimento, tipo });
+    }
+    let totalBase = 0;
+    const candidatos = [];
+    for (const [cpf, atendimentos] of porCpf) {
+        const apometrias = atendimentos.filter(a => a.tipo === 'apometria');
+        if (!apometrias.length) continue;
+        totalBase++;
+        const passes = atendimentos.filter(a => a.tipo === 'passe');
+        // O critério se aplica ao histórico inteiro, incluindo atendimentos
+        // anteriores à última apometria e presenças no GAPPUS.
+        if (apometrias.length !== 1 || passes.length !== 1 || atendimentos.length !== 2 || presencas.has(cpf)) continue;
+        const apometria = apometrias[0], passe = passes[0];
+        const dataApometria = apometria.data && new Date(apometria.data);
+        const dataPasse = passe.data && new Date(passe.data);
+        if (!dataApometria || !dataPasse || Number.isNaN(+dataApometria) || Number.isNaN(+dataPasse) || dataPasse < dataApometria) continue;
+        candidatos.push({ cpf, nome: passe.nome || passe.nome_assistido || apometria.nome || apometria.nome_assistido || '', ultimaData: dataPasse });
+    }
+    return { totalBase, candidatos };
+}
+module.exports = { identificarInterrompidos, datasPresencasGappus, resumirAbandonoApometria };

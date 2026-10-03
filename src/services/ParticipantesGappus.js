@@ -39,7 +39,9 @@ async function resolverPessoa(id) {
 }
 
 async function montarLista(data, encontro) {
-    const { pessoas, encaminhamentos } = await carregarPessoas();
+    return montarListaComCadastro(data, encontro, await carregarPessoas());
+}
+function montarListaComCadastro(data, encontro, { pessoas, encaminhamentos }) {
     const indicados = new Set();
     const ultimos = new Map();
     for (const atendimento of encaminhamentos) {
@@ -66,4 +68,4 @@ async function montarLista(data, encontro) {
     desistentes.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     return { participantes, desistentes };
 }
-module.exports = { identidade, idValido, desistiuNaData, carregarPessoas, resolverPessoa, montarLista };
+module.exports = { identidade, idValido, desistiuNaData, carregarPessoas, resolverPessoa, montarLista, montarListaComCadastro };
