@@ -3,6 +3,11 @@
 .gestao p { margin: 12px 0; }
 .gestao .painel { padding: 22px; margin: 20px 0; border: 1px solid #ddd; border-radius: 8px; background: white; }
 .gestao .campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 18px; }
+.gestao .gappus-campos-encontro { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr); align-items: end; }
+.gestao .gappus-campos-encontro > div { min-width: 0; }
+.gestao .gappus-busca-participante { display: flex; gap: 8px; align-items: stretch; }
+.gestao .gappus-busca-participante input { min-width: 0; flex: 1; }
+.gestao .gappus-busca-participante button { margin: 0; flex-shrink: 0; }
 .gestao label { display: block; font-weight: 600; margin-bottom: 6px; }
 .gestao input:not([type=checkbox]), .gestao select, .gestao textarea { display: block; width: 100%; padding: 10px; border: 1px solid #bbb; border-radius: 4px; font-size: 1rem; }
 .gestao textarea { min-height: 90px; }
@@ -22,3 +27,4 @@
 .gestao fieldset { border: 1px solid #ddd; padding: 16px; margin: 16px 0; }
 .gestao legend { font-weight: 600; padding: 0 8px; }
 @media (max-width: 700px) { .gestao { padding: 0 12px; } .gestao .painel { padding: 14px; } }
+@media (max-width: 900px) { .gestao .gappus-campos-encontro { grid-template-columns: 1fr; } }
