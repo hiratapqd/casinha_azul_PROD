@@ -74,7 +74,10 @@
   const dataHoje = CasinhaDatas.hojeLocal();
   document.getElementById('campo_data').value = dataHoje;
   const campoRetorno = document.getElementById('data_retorno');
-  if (campoRetorno) campoRetorno.min = CasinhaDatas.somarDiasISO(dataHoje, 1);
+  if (campoRetorno) {
+    campoRetorno.min = CasinhaDatas.somarDiasISO(dataHoje, 1);
+    campoRetorno.value = CasinhaDatas.somarDiasISO(dataHoje, 30);
+  }
   const campoCpf = document.getElementById('cpf_assistido');
   let ultimoCpfSemCadastroAlertado = '';
   let ultimoCpfIncompletoAlertado = '';

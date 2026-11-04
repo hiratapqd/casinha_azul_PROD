@@ -103,6 +103,7 @@
 <script>
     const dataHoje = CasinhaDatas.hojeLocal();
     document.getElementById('data_retorno').min = CasinhaDatas.somarDiasISO(dataHoje, 1);
+    document.getElementById('data_retorno').value = CasinhaDatas.somarDiasISO(dataHoje, 30);
     document.getElementById('campo_data').value = dataHoje;
     const campoCpf = document.getElementById('cpf_assistido');
     let ultimoCpfSemCadastroAlertado = '';

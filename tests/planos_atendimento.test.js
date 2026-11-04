@@ -67,5 +67,6 @@ test('configuração cria planos e ficha apométrica seleciona três passes e ma
     assert.ok(configuracoes.includes('&lt;Personalizado&gt;'));
     const ficha = await ejs.renderFile(path.join(__dirname, '..', 'views', 'atendimento', 'apometrico.ejs'), base);
     assert.match(ficha, /value="passes" selected/); assert.match(ficha, /name="data_retorno"/); assert.ok(ficha.includes(`value="${id}"`));
+    assert.match(ficha, /data_retorno'\)\.value = CasinhaDatas\.somarDiasISO\(dataHoje, 30\)/);
     assert.equal(ficha.includes('plano_acompanhamento'), false);
 });

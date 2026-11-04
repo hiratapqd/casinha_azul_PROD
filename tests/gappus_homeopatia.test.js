@@ -83,6 +83,15 @@ test('homeopatia exige retorno futuro e grava a data junto do atendimento', asyn
     assert.equal(res.codigo, 200); assert.equal(registro.data_retorno, retorno);
 });
 
+test('ficha homeopática define retorno padrão para 30 dias', async () => {
+    const ficha = await ejs.renderFile(path.join(__dirname, '..', 'views', 'atendimento', 'formulario_padrao.ejs'), {
+        tipo: 'homeopatia', titulo: 'Homeopatia', action: '/atendimento/salvar', botaoTexto: 'Finalizar',
+        historicoTitulo: 'Histórico', mensagemHistoricoInicial: 'Aguardando CPF...',
+        sucessoMensagem: 'Salvo', historicoVazioMensagem: 'Sem histórico', redirectAposSalvar: '/fila-atendimento'
+    });
+    assert.match(ficha, /campoRetorno\.value = CasinhaDatas\.somarDiasISO\(dataHoje, 30\)/);
+});
+
 
 
 test('presença GAPPUS após a apometria elimina a interrupção inferida pelo histórico', () => {
