@@ -4,6 +4,7 @@ const { inicioMes } = require('../utils/operacao');
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
 const PERIODOS_MOVIMENTACAO = [30, 60, 90, 180, 365];
+const INDICADORES_MOVIMENTACAO = ['acumulado', 'faixas', 'sem-venda'];
 const FAIXAS_MOVIMENTACAO = [
     { chave: 'd30', titulo: '0-30d', inicio: 0, fim: 30 },
     { chave: 'd60', titulo: '31-60d', inicio: 30, fim: 60 },
@@ -135,6 +136,9 @@ exports.getMovimentacao = async (req, res) => {
         const filtroSemVenda = PERIODOS_MOVIMENTACAO.includes(Number(req.query.semVenda))
             ? Number(req.query.semVenda)
             : null;
+        const indicadorSelecionado = INDICADORES_MOVIMENTACAO.includes(req.query.indicador)
+            ? req.query.indicador
+            : 'acumulado';
 
         const cortes = PERIODOS_MOVIMENTACAO.reduce((acc, dias) => {
             acc[`d${dias}`] = getDataCorte(hoje, dias);
@@ -211,6 +215,7 @@ exports.getMovimentacao = async (req, res) => {
             resumoFaixas,
             resumoSemVenda,
             filtroSemVenda,
+            indicadorSelecionado,
             totalLivros: livros.length
         });
     } catch (err) {

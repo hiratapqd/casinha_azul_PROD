@@ -16,7 +16,18 @@
                     style="width: 100%; padding: 12px 12px 12px 40px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
             </div>
 
+            <label for="seletorIndicadores" style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                Indicadores
+                <select id="seletorIndicadores"
+                    style="height: 45px; padding: 0 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff;">
+                    <option value="acumulado" <%= indicadorSelecionado === 'acumulado' ? 'selected' : '' %>>Acumulado</option>
+                    <option value="faixas" <%= indicadorSelecionado === 'faixas' ? 'selected' : '' %>>Por faixa</option>
+                    <option value="sem-venda" <%= indicadorSelecionado === 'sem-venda' ? 'selected' : '' %>>Sem vendas</option>
+                </select>
+            </label>
+
             <form method="get" action="/livraria/movimentacao" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0;">
+                <input type="hidden" name="indicador" id="indicadorFiltro" value="<%= indicadorSelecionado %>">
                 <select name="semVenda" onchange="this.form.submit()"
                     style="height: 45px; padding: 0 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff;">
                     <option value="" <%= !filtroSemVenda ? 'selected' : '' %>>Todos os livros</option>
@@ -28,7 +39,7 @@
                 </select>
 
                 <% if (filtroSemVenda) { %>
-                    <a href="/livraria/movimentacao" class="muted" style="white-space: nowrap;">Limpar filtro</a>
+                    <a id="limparFiltro" href="/livraria/movimentacao?indicador=<%= indicadorSelecionado %>" class="muted" style="white-space: nowrap;">Limpar filtro</a>
                 <% } %>
             </form>
 
@@ -38,6 +49,7 @@
         </div>
     </div>
 
+    <section data-indicador="acumulado" <%= indicadorSelecionado !== 'acumulado' ? 'hidden' : '' %> style="margin-bottom: 25px;">
     <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
         <h2 style="margin: 0; color: #1277bb; font-size: 1.2rem;">Acumulado</h2>
         <small style="color: #777;">Listando <%= livros.length %> de <%= totalLivros %> livros</small>
@@ -54,7 +66,9 @@
             </div>
         <% }) %>
     </div>
+    </section>
 
+    <section data-indicador="faixas" <%= indicadorSelecionado !== 'faixas' ? 'hidden' : '' %> style="margin-bottom: 25px;">
     <div style="margin-bottom: 12px;">
         <h2 style="margin: 0; color: #1277bb; font-size: 1.2rem;">Por faixa</h2>
     </div>
@@ -70,14 +84,16 @@
             </div>
         <% }) %>
     </div>
+    </section>
 
+    <section data-indicador="sem-venda" <%= indicadorSelecionado !== 'sem-venda' ? 'hidden' : '' %> style="margin-bottom: 25px;">
     <div style="margin-bottom: 12px;">
-        <h2 style="margin: 0; color: #1277bb; font-size: 1.2rem;">Nao vendidos</h2>
+        <h2 style="margin: 0; color: #1277bb; font-size: 1.2rem;">Sem vendas</h2>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 25px;">
         <% periodos.forEach(dias => { const chave = `d${dias}`; const ativo = filtroSemVenda === dias; %>
-            <a href="/livraria/movimentacao?semVenda=<%= dias %>" class="card"
+            <a href="/livraria/movimentacao?semVenda=<%= dias %>&indicador=sem-venda" class="card"
                 style="border-top: 4px solid <%= ativo ? '#ff4d4d' : '#f0ad4e' %>; text-align: center; padding: 14px; text-decoration: none; color: inherit; box-shadow: <%= ativo ? '0 0 0 2px rgba(255, 77, 77, 0.25)' : 'none' %>;">
                 <h3 style="color: #666; font-size: 0.85em; margin: 0;">SEM VENDA <%= dias %> DIAS</h3>
                 <p style="font-size: 1.8em; font-weight: bold; color: <%= ativo ? '#ff4d4d' : '#f0ad4e' %>; margin: 8px 0 2px;">
@@ -87,6 +103,7 @@
             </a>
         <% }) %>
     </div>
+    </section>
 
     <div class="card" style="overflow-x: auto;">
         <table>
@@ -159,6 +176,21 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const seletorIndicadores = document.getElementById('seletorIndicadores');
+    const indicadorFiltro = document.getElementById('indicadorFiltro');
+    const limparFiltro = document.getElementById('limparFiltro');
+    const secoesIndicadores = document.querySelectorAll('[data-indicador]');
+
+    seletorIndicadores.addEventListener('change', function() {
+        indicadorFiltro.value = seletorIndicadores.value;
+        if (limparFiltro) {
+            limparFiltro.href = `/livraria/movimentacao?indicador=${encodeURIComponent(seletorIndicadores.value)}`;
+        }
+        secoesIndicadores.forEach(secao => {
+            secao.hidden = secao.dataset.indicador !== seletorIndicadores.value;
+        });
+    });
+
     const inputBusca = document.getElementById('inputBusca');
     if (!inputBusca) return;
 
